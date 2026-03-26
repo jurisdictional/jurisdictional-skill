@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "source": "https://www.austintexas.gov",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "City of Austin",
+  "level": "municipal",
+  "state_abbr": "TX",
+  "geoid": "4805000",
+  "parent": "texas",
+  "wikipedia_url": "https://en.wikipedia.org/wiki/Austin,_Texas",
+  "budget_url": "https://www.austintexas.gov/financeonline/finance/financial_docs.cfm",
+  "notes": "State capital of Texas. Council-manager government with 10 council districts plus a mayor."
+}

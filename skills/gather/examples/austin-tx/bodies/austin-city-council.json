@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "source": "https://www.austintexas.gov/department/city-council",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "Austin City Council",
+  "body_type": "council",
+  "jurisdiction": "austin-tx",
+  "url": "https://www.austintexas.gov/department/city-council",
+  "description": "Legislative body for the City of Austin, consisting of 10 council members elected by district plus the mayor"
+}

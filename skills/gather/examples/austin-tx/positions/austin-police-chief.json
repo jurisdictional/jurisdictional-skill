@@ -1,0 +1,11 @@
+{
+  "_meta": {
+    "source": "https://www.austintexas.gov/department/police",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "label": "Chief of Police",
+  "role": "executive",
+  "person": "robin-henderson",
+  "agency": "austin-police-department"
+}

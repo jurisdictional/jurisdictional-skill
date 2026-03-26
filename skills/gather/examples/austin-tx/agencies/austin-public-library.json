@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "source": "https://library.austintexas.gov",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "Austin Public Library",
+  "agency_type": "department",
+  "jurisdiction": "austin-tx",
+  "url": "https://library.austintexas.gov",
+  "description": "Public library system with 20+ branches"
+}

@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "source": "https://www.austintexas.gov/department/fire",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "Austin Fire Department",
+  "agency_type": "department",
+  "jurisdiction": "austin-tx",
+  "url": "https://www.austintexas.gov/department/fire",
+  "description": "Fire suppression, emergency medical services, and fire prevention",
+  "phone": "512-974-0130"
+}

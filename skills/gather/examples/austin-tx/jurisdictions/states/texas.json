@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "source": "https://www.texas.gov",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "Texas",
+  "level": "state",
+  "geoid": "48",
+  "state_abbr": "TX",
+  "parent": "united-states",
+  "wikipedia_url": "https://en.wikipedia.org/wiki/Texas"
+}

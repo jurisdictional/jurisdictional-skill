@@ -1,0 +1,13 @@
+{
+  "_meta": {
+    "source": "https://www.austintexas.gov/department/fire",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "Fire Safety Inspection",
+  "agency": "austin-fire-department",
+  "category": "inspection",
+  "description": "Commercial building fire safety inspection",
+  "cost": "0",
+  "processing_time": "2-4 weeks"
+}

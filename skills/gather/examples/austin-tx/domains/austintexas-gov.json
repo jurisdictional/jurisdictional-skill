@@ -1,0 +1,9 @@
+{
+  "_meta": {
+    "source": "https://raw.githubusercontent.com/cisagov/dotgov-data/main/current-full.csv",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "domain": "austintexas.gov",
+  "jurisdiction": "austin-tx"
+}

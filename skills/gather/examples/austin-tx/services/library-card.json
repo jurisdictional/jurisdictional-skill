@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "source": "https://library.austintexas.gov/get-a-library-card",
+    "retrieved_at": "2026-02-26",
+    "contributor": "example-user"
+  },
+  "name": "Library Card",
+  "agency": "austin-public-library",
+  "url": "https://library.austintexas.gov/get-a-library-card",
+  "category": "registration",
+  "description": "Free library card for Austin residents",
+  "cost": "0",
+  "eligibility": "Must live in Austin or Travis County"
+}
