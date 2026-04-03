@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "jurisdictional": {
+      "type": "url",
+      "url": "https://jurisdictional.org/api/mcp/message",
+      "headers": {
+        "Authorization": "Bearer ${JURISDICTIONAL_TOKEN}"
+      }
+    }
+  }
+}

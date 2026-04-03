@@ -1,167 +1,209 @@
 ---
 name: gather
-description: Research and structure civic data about a city or jurisdiction — agencies, services, contacts — from public sources into a standard open data format
+description: Connect with your local government — explore agencies, services, and officials, and contribute what you know
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: WebSearch, WebFetch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
-argument-hint: [city, state]
+argument-hint: [address or city, state]
 ---
 
-# Jurisdictional — Civic Data Contribution
+# Gather — Civic Data
 
-You are helping a person document the government structure of their jurisdiction. Think of this like building a pull request for a civic dataset: research, structure, review, submit.
+You are helping a person connect with the government that serves them and, if they want, contribute to the open civic dataset at [jurisdictional.org](https://jurisdictional.org).
 
-The user is your collaborator. They have local knowledge you don't — defer to them on what's accurate. Your job is to do the legwork of finding and structuring public information, then let them correct and complete it.
+This is a conversation. Meet them where they are.
+
+Some people arrive knowing exactly what they want ("who's on my school board?").
+Others arrive with a vague sense that something is happening in their city and they want to understand it.
+Both are valid starting points. Not every session needs to produce a contribution.
+
+The user has local knowledge you don't — defer to them on what's accurate.
 
 ## Schema
 
-See [schema.md](schema.md) for the full data model and field reference.
+See [schema.md](schema.md) for the data model and field reference.
+See [examples/austin-tx/](examples/austin-tx/) for example output files.
 
-See [examples/austin-tx/](examples/austin-tx/) for a complete example in data-repo format (one file per entity).
+## Flow
 
-## Phases
+Work through these steps conversationally. **Pause after each step** for user input. Do not rush ahead. Steps 1-3 are exploration. Steps 4-6 are contribution — only go there if the user wants to.
 
-Work through these phases in order. **Pause after each phase** for user review before continuing. Do not rush ahead.
-
-### Phase 1: Identify the Jurisdiction
+### Step 1: Where Are You?
 
 If the user provided arguments, use them: `$ARGUMENTS`
 
-1. Confirm the jurisdiction with the user: "I'll research **[City, State]** — is that right?"
-2. Ask for their GitHub username (for `_meta.contributor` on all output files)
-3. Search for the official government website
-4. Search for the Wikipedia article
-5. Look for a Census GEOID if possible
-6. Note the official `.gov` domain (e.g. `austintexas.gov`) — this will become a domain file in Phase 4
-7. Present what you found and ask the user to confirm or correct:
-   - Official name
-   - Government website and domain
-   - Wikipedia URL
-   - Level (municipal, county, state, etc.)
-   - Any notes about governance structure (e.g. "council-manager", "strong mayor")
+1. Use the `set_location` MCP tool with their address or city
+2. Present the **juricode** — the stack of governments that serve their location:
+   - Federal government
+   - State
+   - Congressional district
+   - State legislature
+   - County
+   - City / place
+   - School district
+   - Any special districts
+3. Say: "These are the governments that make decisions about where you live. Which ones are you interested in?"
+4. Store the `jurisdiction_ids` — you'll use them to scope every subsequent query
 
-**Output:** A summary of the jurisdiction identity. Wait for user confirmation.
+If the user has multiple addresses (home, work, property), they can set a different location anytime.
 
-### Phase 2: Survey Agencies
+### Step 2: What Are You Interested In?
 
-1. From the official government website, find the list of departments/agencies. Look for:
-   - "Departments" or "Agencies" page
-   - Organizational chart
-   - "Government" or "City Hall" directory
-2. Compile a list of agencies with:
-   - Name
-   - Agency type (department, bureau, commission, board, authority, office, division)
-   - Website URL
-3. Also identify **governing bodies** — city council, county commission, board of supervisors, etc. These are tracked separately from agencies. For each body, note:
-   - Name (e.g. "Austin City Council")
-   - Type (council, commission, board)
-   - Website URL
-   - Number of members / districts if apparent
-4. Present the agencies and bodies to the user in a table and ask:
-   - "Are any of these wrong or outdated?"
-   - "Are there agencies or bodies missing from this list?"
-   - "Any of these that should be skipped (not relevant)?"
+Understand what the user cares about. Use `AskUserQuestion` to present the jurisdiction layers and civic topics as selectable options.
 
-**Output:** A confirmed list of agencies and bodies to detail. Wait for user input.
+First, present the **governance layers** returned by `set_location` as lettered options and ask which ones they want to focus on (they can pick multiple). Use the actual jurisdiction names from the API response — for example if the juricode returned 7 jurisdictions, list all 7 plus an "All of them" option.
 
-### Phase 3: Detail Each Agency and Body
+Then present **civic topics** as a second selection:
 
-Before starting, ask the user what level of detail they want:
-
-- **Quick** — Name, type, URL, and a one-line description for each agency. Best for initial contributions or large jurisdictions.
-- **Full** — Everything: contacts, officials, services, budget info. Takes longer and works best for a focused set of agencies.
-
-If the user chose "quick", gather just those fields for all agencies and move to Phase 4.
-
-If the user chose "full" (or for a subset they want fully detailed):
-
-1. Visit the agency's website
-2. Look for:
-   - Description / mission statement
-   - Contact info (phone, email, address)
-   - Head official (name and title)
-   - Budget information
-   - Employee count
-   - Key services offered
-3. For each service found, capture:
-   - Name and type
-   - Description
-   - Online URL
-   - Cost
-   - Processing time
-   - Eligibility and requirements
-
-Work through agencies in batches of 3-5. After each batch, show the user what you found and ask for corrections before continuing.
-
-Do NOT fabricate information. If you can't find something, leave the field out. Note what you couldn't find so the user can fill gaps.
-
-### Phase 4: Structure and Write
-
-Write **one file per entity** in the data repo format (see schema.md for both the bundle format and the flat-file format).
-
-1. Write individual JSON files to the current directory:
-   - `jurisdictions/{level}/{slug}.json` — the jurisdiction (level is `federal`, `states`, `counties`, or `places`)
-   - `agencies/{slug}.json` — one file per agency
-   - `services/{slug}.json` — one file per service
-   - `people/{slug}.json` — one file per person (if officials were found)
-   - `positions/{slug}.json` — one file per position
-   - `bodies/{slug}.json` — one file per legislative/governing body (if found)
-   - `domains/{slug}.json` — one file per `.gov` domain found (jurisdiction's official domain at minimum)
-2. Each file must include a `_meta` block with source URL, retrieved_at date, and contributor
-3. Use cross-reference slugs (not IDs) for relationships:
-   - Agency → `"jurisdiction": "austin-tx"`
-   - Service → `"agency": "austin-police-department"`
-   - Position → `"agency": "...", "person": "..."`
-4. Use data-repo field names (see schema.md field mapping table)
-5. Validate the output:
-   - Check that every cross-reference slug points to a file that exists (e.g., if a service references `"agency": "austin-police-department"`, verify `agencies/austin-police-department.json` was written)
-   - Check that every file has a valid `_meta` block with `source` and `retrieved_at`
-   - If `~/workspace/jurisdictional-data` exists and has JSON schemas, run: `mix data.import --file={file} --dry-run` to validate against the schema
-   - Report any validation errors to the user
-6. Show the user a summary:
-   - Number of files written per entity type
-   - List of cross-reference slugs used
-   - Any fields that are incomplete or missing
-   - Validation results (pass/fail)
-7. Ask: "Want to review the files, or is there anything to add or fix?"
-
-### Phase 5: Submit to Data Repo (Optional)
-
-Ask: "Want to submit these files to the jurisdictional-data repo, or keep them local for now?"
-
-If the user wants to submit:
-
-1. Check if `~/workspace/jurisdictional-data` exists. If not, offer to clone it:
-   ```
-   gh repo fork jurisdictional/jurisdictional-data --clone \
-     --clone-dir ~/workspace/jurisdictional-data
-   ```
-2. Copy entity files into the data repo:
-   ```
-   cp -r jurisdictions/ agencies/ services/ bodies/ people/ positions/ domains/ \
-     ~/workspace/jurisdictional-data/
-   ```
-3. Create a branch and open a PR:
-   ```
-   cd ~/workspace/jurisdictional-data
-   git checkout -b add-{jurisdiction-slug}
-   git add .
-   git commit -m "Add {jurisdiction name} civic data"
-   gh pr create --title "Add {jurisdiction name}" \
-     --body "Contributed via jurisdictional/gather skill"
-   ```
-
-If the user has the Elixir tooling available, they can alternatively use:
 ```
-mix data.commit agencies/{slug}.json --entity-type=agencies \
-  --branch=add-{jurisdiction-slug} --pr
+A) Elections & voting
+B) Budget & finance
+C) Planning & zoning
+D) Education
+E) Water & utilities
+F) Housing
+G) Public safety
+H) Transportation
+I) Environment
+J) Public health
+K) Economic development
+L) Civil rights
+M) Something else — I'll describe it
 ```
+
+The user can pick one or more letters, or describe their own interest. If they describe a specific situation (like "I've been collecting city council meeting transcripts for Vacaville"), work with that directly — don't force them into a category.
+
+### Step 3: Explore and Find Gaps
+
+Use the MCP tools to show what jurisdictional.org already knows, and what's missing:
+
+- **`explore`** — search by topic and entity type within their jurisdictions
+- **`search_agencies`**, **`search_services`**, **`search_bodies`**, **`search_people`** — find specifics
+- **`get_jurisdiction_details`**, **`get_agency_details`**, etc. — drill into detail
+
+Present information conversationally:
+- "Your city council has 5 members. Here's who they are..."
+- "There are 3 water-related services listed for your area, but no meeting schedule for the water board."
+- "Solano County has 12 agencies on file, but most are missing contact info."
+
+**Highlight gaps.** When something is missing or incomplete, say so:
+- "No one has added the planning commission yet."
+- "The police department is listed but has no services or contact info."
+- "There's no school board data for your district."
+
+Use `get_pending_tasks` with the primary `jurisdiction_id` to show platform-prioritized work:
+
+```
+get_pending_tasks(jurisdiction_id: <id>, limit: 5)
+```
+
+Present these alongside the general gap analysis:
+- "Here are 3 things we specifically need help with for Vacaville..."
+- "Task [id]: Find the city council meeting schedule. Sources: https://cityofvacaville.com/council"
+
+Completed tasks are submitted back with `submit_sourcing_result`. Gap analysis from the explore tools covers anything not yet in the task queue.
+
+Then ask: "Want to help fill any of this in, or keep exploring?"
+
+If the user just wants to explore, stay here. Answer their questions, drill into topics, show them who represents them. That's a complete experience.
+
+If they want to contribute, continue to Step 4.
+
+### Step 4: Research and Fill Gaps
+
+Based on what's missing, use `WebSearch` and `WebFetch` to research the official government website. Look for:
+
+- Agencies/departments not yet in the database
+- Services that residents use but aren't listed
+- Officials and positions that are empty or outdated
+- Governing bodies (city council, boards, commissions)
+- Contact information gaps (phone, email, address)
+- Meeting schedules
+- Budget/financial information
+
+**Detail levels:** Ask what depth they want:
+- **Quick** — name, type, URL, description per entity
+- **Full** — contacts, officials, services, budget info
+
+Present findings in batches. Ask for corrections before continuing.
+
+Frame contributions around what the user brings:
+- **Local knowledge**: "You probably know things about your city council that aren't online. Want to add meeting details or correct what we have?"
+- **Research skills**: "The county has 8 agencies listed but most are bare. Want to fill in the details?"
+- **Meeting transcripts**: "We don't have meeting schedules for your city council. Want to add when they meet and link to transcripts?"
+- **Their own data**: "I have a spreadsheet of every zoning decision from last year" — work with whatever they bring.
+
+Do NOT fabricate information. If you can't find something, leave it out. Note what you couldn't find so the user can fill gaps.
+
+### Step 5: Authenticate and Submit
+
+Before submitting, check for a token:
+
+```bash
+echo ${JURISDICTIONAL_TOKEN}
+```
+
+If the variable is empty:
+
+```bash
+cat ~/.jurisdictional/token 2>/dev/null
+```
+
+If no token is found:
+1. Say: "You'll need to sign in to submit contributions directly. Opening jurisdictional.org..."
+2. Run: `open https://jurisdictional.org/auth/cli`
+3. Ask: "Paste the token shown on that page, or set `JURISDICTIONAL_TOKEN` in your shell and restart Claude Code."
+
+If a token is found, confirm: "Signed in. Contributions will appear in your account at jurisdictional.org."
+
+### Step 6: Submit
+
+For each entity the user wants to contribute, call the `propose_change` MCP tool once per field:
+
+```
+propose_change(
+  entity_type: "agency",
+  entity_id: <id from API>,
+  field_name: "phone",
+  new_value: "+1-707-448-6000",
+  source_url: "https://solanoid.com/contact",
+  notes: "Listed on the contact page"
+)
+```
+
+**How to get entity IDs:**
+- For existing entities: use `search_agencies`, `get_agency_details`, etc. — the response includes `id`
+- For entities not yet in the database: say so. Direct contributions only work against existing entities.
+  New entities should still go via GitHub PR (the existing data-repo flow) until the create API exists.
+
+**Submit in batches, show progress:**
+
+```
+Submitting contributions for Solano Irrigation District...
+  ✓ phone → propose_change submitted
+  ✓ website → propose_change submitted
+  ✓ address → propose_change submitted
+
+Submitting for District Manager position...
+  ✓ title → propose_change submitted
+
+4 contributions submitted. They'll appear in your account at:
+https://jurisdictional.org/users/contributions
+```
+
+After each batch, pause and ask: "Want to continue with the next entity, or check anything?"
+
+**Local files are optional.** If the user wants a local record of what they contributed, write JSON files per the schema. But the submission is the `propose_change` call — not the file.
 
 ## Guidelines
 
-- **Cite everything.** Every fact should trace to a source URL. In data-repo format, each file has a single `_meta.source` — use the primary source URL for that entity. If multiple sources informed the data, note additional URLs in a `_meta.notes` field.
-- **Don't guess.** If you can't find a phone number, leave it out. Missing data is better than wrong data.
-- **Prefer official sources.** Government `.gov` websites first, then Wikipedia, then news/other.
-- **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them and adjust.
-- **Keep it conversational.** This is a collaboration, not a form to fill out.
-- **Be incremental.** Small, verified contributions are more valuable than comprehensive but unverified ones. It's fine to submit a jurisdiction with just 5 agencies and no services — that's still useful.
+- **Start with their question, not your agenda.** If they want to know who their school board members are, answer that first. Don't lead with "what do you want to contribute?"
+- **Show, then ask.** Present what exists before asking what's missing.
+- **Gaps are opportunities, not failures.** Frame missing data positively: "No one has added this yet — you could be the first."
+- **Don't overwhelm.** A person interested in water rates doesn't need to see every agency in the county.
+- **Respect the scope.** If they want to explore without contributing, that's a complete experience.
+- **Be specific about impact.** "Adding this meeting schedule means anyone in Vacaville can find when their council meets" is better than "this data is useful."
+- **Don't guess.** Missing data is better than wrong data.
+- **Prefer official sources.** Government `.gov` websites first, then Wikipedia, then news.
+- **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them.
+- **Be incremental.** Five verified agencies are more valuable than thirty unverified ones.

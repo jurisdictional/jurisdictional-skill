@@ -1,5 +1,13 @@
 {
   "name": "jurisdictional",
-  "description": "Gather and structure public civic data about your city's government — jurisdictions, agencies, and services — into a standard open data format",
-  "version": "0.1.0"
+  "version": "0.2.0",
+  "description": "Connect to your local government — explore agencies, services, and officials, and contribute civic data to jurisdictional.org",
+  "author": {
+    "name": "Jurisdictional",
+    "url": "https://jurisdictional.org"
+  },
+  "homepage": "https://jurisdictional.org",
+  "repository": "https://github.com/jurisdictional/jurisdictional-skill",
+  "license": "MIT",
+  "keywords": ["civic", "government", "open-data", "jurisdictions"]
 }

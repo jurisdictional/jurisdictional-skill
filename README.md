@@ -1,100 +1,126 @@
 # jurisdictional-skill
 
-A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code) for crowdsourcing civic data about U.S. government structure.
+A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code) that connects you to the governments that serve your address.
 
-The `gather` skill guides you through researching and structuring civic data — jurisdictions, agencies, services, officials — from public sources into a standard open data format.
-The schema is based on the [jurisdictional.org](https://jurisdictional.org) data model.
+Tell it where you live.
+It shows you every layer of government — federal to local — the agencies, the people in office, the services you can access, and what's missing.
+Then, if you want, it helps you fill the gaps.
+
+## Usage
+
+```
+/gather 300 Hemlock Ave, Vacaville, CA
+```
+
+The skill starts by showing you what's there, not asking what to contribute.
+Exploring is a complete experience — you don't have to add anything.
+
+If you do want to help, the skill researches public sources, structures what it finds, and submits contributions directly to [jurisdictional.org](https://jurisdictional.org) via the API.
 
 ## How it works
 
 ```mermaid
 flowchart TD
     subgraph inputs["Inputs"]
-        user["User: city name + local knowledge"]
+        user["User: address + local knowledge"]
+        api["Jurisdictional API\nset_location, explore,\nsearch, details"]
         gov["Government .gov websites"]
-        wiki["Wikipedia"]
-        census["Census GEOID data"]
     end
 
-    subgraph phases["Phases"]
-        p1["Phase 1: Identify\nConfirm jurisdiction, contributor,\nofficial website, domain, GEOID"]
-        p2["Phase 2: Survey\nList agencies + governing bodies\nfrom official website"]
-        p3["Phase 3: Detail\nQuick or Full depth per agency:\ncontacts, officials, services"]
-        p4["Phase 4: Structure\nWrite one JSON file per entity,\nvalidate cross-references"]
-        p5["Phase 5: Submit\nFork data repo, open PR\n(optional)"]
+    subgraph explore["Explore"]
+        e1["Set location\n→ geocode → juricode"]
+        e2["Pick interests\nelections, housing,\neducation, safety..."]
+        e3["See what exists\nagencies, services,\nofficials, bodies"]
+        e4["Find gaps\nwhat's missing\nor outdated"]
     end
 
-    subgraph outputs["Outputs — one file per entity"]
-        j["jurisdictions/places/austin-tx.json"]
-        a["agencies/austin-police-department.json"]
-        s["services/file-a-police-report.json"]
-        b["bodies/austin-city-council.json"]
-        p["people/robin-henderson.json"]
-        pos["positions/austin-police-chief.json"]
-        d["domains/austintexas-gov.json"]
+    subgraph contribute["Contribute (optional)"]
+        g1["Research gaps\nfrom public sources"]
+        g2["Authenticate\nvia jurisdictional.org"]
+        g3["Submit\nvia propose_change API"]
     end
 
-    user --> p1
-    gov --> p1
-    gov --> p2
-    gov --> p3
-    wiki --> p1
-    census --> p1
-    p1 -->|"user confirms"| p2
-    p2 -->|"user confirms"| p3
-    p3 -->|"user confirms"| p4
-    p4 -->|"user confirms"| p5
-    p4 --> j & a & s & b & p & pos & d
-    p5 -->|PR| repo["jurisdictional/jurisdictional-data"]
+    user --> e1
+    api --> e1
+    api --> e3
+    e1 --> e2
+    e2 --> e3
+    e3 --> e4
+    e4 -->|"user wants\nto contribute"| g1
+    gov --> g1
+    g1 --> g2
+    g2 --> g3
+    g3 -->|"contributions appear at"| site["jurisdictional.org"]
 ```
 
-Each phase pauses for user review before continuing.
-The user's local knowledge fills gaps and corrects what web research gets wrong.
+The skill uses the [Jurisdictional MCP API](https://jurisdictional.org/api/mcp/tools) — 15 tools for searching jurisdictions, agencies, services, bodies, people, and positions by location, topic, or name.
 
 ## Install
 
-Clone the repo into your Claude Code plugins directory:
-
 ```bash
-git clone https://github.com/jurisdictional/gather-skill.git ~/.claude/plugins/gather-skill
+git clone https://github.com/jurisdictional/jurisdictional-skill.git
+cp -r jurisdictional-skill/skills/gather ~/.claude/skills/gather
+cp jurisdictional-skill/.mcp.json ~/.claude/.mcp.json
+rm -rf jurisdictional-skill
 ```
 
-Then run `/reload-plugins` in Claude Code.
+Then run `/gather` in Claude Code.
 
-## Usage
+## Authentication
 
-```
-/gather Austin, TX
-```
+**Exploration works without sign-in.** The MCP tools are public.
 
-The skill will:
+To submit contributions, the skill will prompt you to sign in:
 
-1. **Identify** the jurisdiction — confirm name, website, governance type, GEOID, `.gov` domain
-2. **Survey** agencies and governing bodies from the official government website
-3. **Detail** each agency — quick (name/type/url/description) or full (contacts, officials, services, budget)
-4. **Structure** data into individual JSON files with `_meta` provenance and cross-reference validation
-5. **Submit** to [jurisdictional-data](https://github.com/jurisdictional/jurisdictional-data) via PR (optional)
+1. Opens `https://jurisdictional.org/auth/cli` in your browser
+2. You authenticate via GitHub
+3. Paste the token, or set `JURISDICTIONAL_TOKEN` in your shell
+
+## What you can contribute
+
+| Task | Description |
+|------|-------------|
+| Discover agencies | Find departments not yet in the database |
+| Add contacts | Phone, email, address for existing agencies |
+| Discover bodies | City councils, boards, commissions |
+| Add officials | Who holds office and their positions |
+| Add services | What residents can do or request |
+| Meeting schedules | When governing bodies meet |
+| Verify data | Check if existing records are still accurate |
+| Add budget info | Financial and budget data |
+
+## Civic topics
+
+The skill can focus on what you care about:
+
+Elections & voting, Budget & finance, Planning & zoning, Education, Water & utilities, Housing, Public safety, Transportation, Environment, Public health, Economic development, Civil rights
+
+Or just tell it what you're following — "I've been tracking city council votes on water rates" works too.
 
 ## Data format
 
-One JSON file per entity, cross-referenced by filename slug:
+Contributions go directly to jurisdictional.org via the `propose_change` API.
+If you also want local files, the skill can write one JSON file per entity:
 
+```json
+{
+  "_meta": {
+    "source": "https://www.cityofvacaville.com/departments/police",
+    "retrieved_at": "2026-04-02",
+    "contributor": "your-github-username"
+  },
+  "name": "Vacaville Police Department",
+  "agency_type": "department",
+  "jurisdiction": "vacaville-ca",
+  "url": "https://www.cityofvacaville.com/departments/police",
+  "phone": "707-449-5200"
+}
 ```
-jurisdictions/places/austin-tx.json
-agencies/austin-police-department.json
-services/file-a-police-report.json
-bodies/austin-city-council.json
-people/robin-henderson.json
-positions/austin-police-chief.json
-domains/austintexas-gov.json
-```
 
-Every file includes a `_meta` block with source URL, retrieval date, and contributor.
-
-See [schema.md](skills/gather/schema.md) for the full specification and [examples/austin-tx/](skills/gather/examples/austin-tx/) for a complete sample.
+See [schema.md](skills/gather/schema.md) for field definitions and [examples/austin-tx/](skills/gather/examples/austin-tx/) for a complete sample.
 
 ## Contributing
 
-The best way to contribute is to run the skill for your city and submit the resulting data.
+The best way to contribute is to run `/gather` for your city.
 
-Contributions to the skill itself are also welcome — see [SKILL.md](skills/gather/SKILL.md) for the prompt and phase definitions.
+Contributions to the skill itself are welcome — see [SKILL.md](skills/gather/SKILL.md) for the prompt and flow definition.
