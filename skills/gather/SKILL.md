@@ -49,29 +49,40 @@ If the user has multiple addresses (home, work, property), they can set a differ
 
 ### Step 2: What Are You Interested In?
 
-Understand what the user cares about. Use `AskUserQuestion` to present the jurisdiction layers and civic topics as selectable options.
+Understand what the user cares about. Present selections as lettered options so the user can respond with just letters.
 
-First, present the **governance layers** returned by `set_location` as lettered options and ask which ones they want to focus on (they can pick multiple). Use the actual jurisdiction names from the API response — for example if the juricode returned 7 jurisdictions, list all 7 plus an "All of them" option.
+**First question — governance layers.** Build this from the `set_location` response. Call `AskUserQuestion` with lettered options listing each jurisdiction returned, plus "All of them" at the end. The user picks one or more letters. Example format:
 
-Then present **civic topics** as a second selection:
+> Which governments are you interested in? Pick one or more letters.
+>
+> A) United States (federal)
+> B) California (state)
+> C) CA Congressional District 4
+> D) CA Senate District 3
+> E) Solano County
+> F) City of Vacaville
+> G) Vacaville Unified School District
+> H) All of them
 
-```
-A) Elections & voting
-B) Budget & finance
-C) Planning & zoning
-D) Education
-E) Water & utilities
-F) Housing
-G) Public safety
-H) Transportation
-I) Environment
-J) Public health
-K) Economic development
-L) Civil rights
-M) Something else — I'll describe it
-```
+**Second question — civic topics.** Call `AskUserQuestion` again:
 
-The user can pick one or more letters, or describe their own interest. If they describe a specific situation (like "I've been collecting city council meeting transcripts for Vacaville"), work with that directly — don't force them into a category.
+> What topics interest you? Pick one or more, or type your own.
+>
+> A) Elections & voting
+> B) Budget & finance
+> C) Planning & zoning
+> D) Education
+> E) Water & utilities
+> F) Housing
+> G) Public safety
+> H) Transportation
+> I) Environment
+> J) Public health
+> K) Economic development
+> L) Civil rights
+> M) Something else — I'll describe it
+
+The user can pick multiple letters ("B, E, G"), or describe a specific situation ("I've been collecting city council meeting transcripts"). If they describe something specific, work with that directly — don't force them into a category.
 
 ### Step 3: Explore and Find Gaps
 
@@ -111,7 +122,17 @@ If they want to contribute, continue to Step 4.
 
 ### Step 4: Research and Fill Gaps
 
-Based on what's missing, use `WebSearch` and `WebFetch` to research the official government website. Look for:
+Based on what's missing, use `WebSearch` and `WebFetch` to research the official government website.
+
+**If `WebFetch` gets blocked** (403, Cloudflare challenge, empty/garbled response), use the bundled `fetch-page` script which launches a real headless browser. Many `.gov` sites block `curl`/`fetch` but allow browser requests.
+
+```bash
+~/.claude/skills/gather/bin/fetch-page <url>
+```
+
+Add `--html` for raw HTML instead of text. Use this whenever `WebFetch` fails on a government site.
+
+Look for:
 
 - Agencies/departments not yet in the database
 - Services that residents use but aren't listed
