@@ -1,26 +1,32 @@
 #!/bin/bash
 # Fetch a URL with a real browser and print rendered text content.
-# Usage: fetch-page [--html] <url>
+# Usage: fetch-page [--html] [--visible] <url>
+#
+# --visible: Opens a browser window the user can see and interact with.
+#            Useful when sites require CAPTCHA, SSO, or cookie consent.
+#            The script waits for the page to settle, then grabs content.
+#
 # Requires: playwright (installed automatically on first run)
 
 set -e
 
 HTML=false
+VISIBLE=false
 URL=""
 
 for arg in "$@"; do
   case "$arg" in
     --html) HTML=true ;;
+    --visible) VISIBLE=true ;;
     *) URL="$arg" ;;
   esac
 done
 
 if [ -z "$URL" ]; then
-  echo "Usage: fetch-page [--html] <url>" >&2
+  echo "Usage: fetch-page [--html] [--visible] <url>" >&2
   exit 1
 fi
 
-# Ensure playwright is available
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 if [ ! -d "$SCRIPT_DIR/node_modules/playwright" ]; then
   npm install --prefix "$SCRIPT_DIR" --save playwright >/dev/null 2>&1
@@ -32,14 +38,36 @@ else
   MODE="text"
 fi
 
+if [ "$VISIBLE" = true ]; then
+  HEADLESS="false"
+else
+  HEADLESS="true"
+fi
+
 node -e "
   const { chromium } = require('$SCRIPT_DIR/node_modules/playwright');
   (async () => {
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+    const headless = $HEADLESS;
+    const browser = await chromium.launch({
+      headless,
+      args: headless ? ['--disable-blink-features=AutomationControlled'] : []
+    });
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      viewport: { width: 1280, height: 800 }
+    });
+    const page = await context.newPage();
     try {
       await page.goto(process.argv[1], { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForTimeout(2000);
+
+      if (!headless) {
+        // Visible mode: wait for user to handle any challenges
+        console.error('Browser open. Handle any login/CAPTCHA, then press Enter here when ready...');
+        await new Promise(resolve => process.stdin.once('data', resolve));
+      } else {
+        await page.waitForTimeout(3000);
+      }
+
       if (process.argv[2] === 'html') {
         console.log(await page.content());
       } else {

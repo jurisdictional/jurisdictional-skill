@@ -26,7 +26,28 @@ See [examples/austin-tx/](examples/austin-tx/) for example output files.
 
 ## Flow
 
-Work through these steps conversationally. **Pause after each step** for user input. Do not rush ahead. Steps 1-3 are exploration. Steps 4-6 are contribution — only go there if the user wants to.
+Work through these steps conversationally. **Pause after each step** for user input. Do not rush ahead.
+
+### Step 0: Sign In (optional)
+
+Check for an existing token:
+
+```bash
+echo ${JURISDICTIONAL_TOKEN} 2>/dev/null; cat ~/.jurisdictional/token 2>/dev/null
+```
+
+If a token is found, say: "Signed in to jurisdictional.org — you'll be able to explore and contribute."
+
+If no token, offer to sign in but don't require it:
+
+> Want to sign in to jurisdictional.org? Signing in lets you submit contributions and track your changes.
+>
+> A) Sign in (opens browser)
+> B) Skip — just explore for now
+
+If A: run `open https://jurisdictional.org/auth/cli` and ask the user to paste the token or set `JURISDICTIONAL_TOKEN`.
+
+If B: proceed. Steps 1-4 work without auth. The skill will prompt again at Step 6 if they decide to contribute.
 
 ### Step 1: Where Are You?
 
@@ -86,33 +107,38 @@ The user can pick multiple letters ("B, E, G"), or describe a specific situation
 
 ### Step 3: Explore and Find Gaps
 
-Use the MCP tools to show what jurisdictional.org already knows, and what's missing:
+Use the MCP tools to show what jurisdictional.org already knows, and what's missing.
 
-- **`explore`** — search by topic and entity type within their jurisdictions
-- **`search_agencies`**, **`search_services`**, **`search_bodies`**, **`search_people`** — find specifics
-- **`get_jurisdiction_details`**, **`get_agency_details`**, etc. — drill into detail
+**Data hierarchy.** Civic data builds up in layers — you can't fill in people without positions, positions without bodies, bodies without agencies, agencies without jurisdictions. The order of work is:
 
-Present information conversationally:
-- "Your city council has 5 members. Here's who they are..."
-- "There are 3 water-related services listed for your area, but no meeting schedule for the water board."
-- "Solano County has 12 agencies on file, but most are missing contact info."
+1. **Jurisdictions** — already exist (that's the juricode from Step 1)
+2. **Agencies** — city departments, offices, authorities
+3. **Governing bodies** — city council, commissions, boards
+4. **Positions** — seats in those bodies (Mayor, Council Member Seat 1, etc.)
+5. **People** — who holds those positions right now (as tenures)
+6. **Services + open data** — programs, permits, budgets
 
-**Highlight gaps.** When something is missing or incomplete, say so:
-- "No one has added the planning commission yet."
-- "The police department is listed but has no services or contact info."
-- "There's no school board data for your district."
+Use `explore` with each focus type scoped to the user's `jurisdiction_ids` to assess coverage at each layer:
 
-Use `get_pending_tasks` with the primary `jurisdiction_id` to show platform-prioritized work:
+```
+explore(focus: "agencies", jurisdiction_ids: [...], limit: 50)
+explore(focus: "bodies", jurisdiction_ids: [...], limit: 50)
+explore(focus: "people", jurisdiction_ids: [...], limit: 50)
+explore(focus: "services", jurisdiction_ids: [...], limit: 50)
+```
+
+Also use `get_pending_tasks` to show platform-prioritized work:
 
 ```
 get_pending_tasks(jurisdiction_id: <id>, limit: 5)
 ```
 
-Present these alongside the general gap analysis:
-- "Here are 3 things we specifically need help with for Vacaville..."
-- "Task [id]: Find the city council meeting schedule. Sources: https://cityofvacaville.com/council"
+Present a summary of coverage per layer:
+- "Vacaville has 12 agencies, 2 governing bodies, but no positions or people yet."
+- "The police department is listed but has no services or contact info."
+- "The platform specifically needs help with: [pending tasks]"
 
-Completed tasks are submitted back with `submit_sourcing_result`. Gap analysis from the explore tools covers anything not yet in the task queue.
+If a jurisdiction is completely empty, say so directly and propose starting from the top: "Vacaville has no data yet. Want to start by finding the city departments? That's the foundation everything else builds on."
 
 Then ask: "Want to help fill any of this in, or keep exploring?"
 
@@ -124,23 +150,29 @@ If they want to contribute, continue to Step 4.
 
 Based on what's missing, use `WebSearch` and `WebFetch` to research the official government website.
 
-**If `WebFetch` gets blocked** (403, Cloudflare challenge, empty/garbled response), use the bundled `fetch-page` script which launches a real headless browser. Many `.gov` sites block `curl`/`fetch` but allow browser requests.
+**If `WebFetch` gets blocked** (403, Cloudflare, Akamai `SERVE_403`), try these fallbacks in order:
 
-```bash
-~/.claude/skills/gather/bin/fetch-page <url>
-```
+1. **`WebSearch` instead of `WebFetch`.** Search for `site:cityofvacaville.gov departments` — search results often contain the information you need without hitting the site directly. Search snippets, cached pages, and indexed content are often sufficient for department listings.
 
-Add `--html` for raw HTML instead of text. Use this whenever `WebFetch` fails on a government site.
+2. **Wikipedia and other public sources.** Search for "[City] government departments Wikipedia" — Wikipedia often lists major departments, the city council structure, and key officials with citations.
 
-Look for:
+3. **Open a browser** so the user can see and interact with the page:
+   ```bash
+   bin/fetch-page --visible <url>
+   ```
+   The user handles any CAPTCHA/consent, then presses Enter. The script grabs the page content.
 
-- Agencies/departments not yet in the database
-- Services that residents use but aren't listed
-- Officials and positions that are empty or outdated
-- Governing bodies (city council, boards, commissions)
-- Contact information gaps (phone, email, address)
-- Meeting schedules
-- Budget/financial information
+4. **Ask the user.** They may already know the departments, have the site open in their browser, or have a PDF org chart. Don't spend 5 attempts hitting a blocked site — just ask.
+
+**Follow the data hierarchy.** Work top-down — fill the layer that's missing before moving deeper:
+
+1. **Agencies first** — find the departments page on the official website. Build the full list.
+2. **Bodies next** — city council, planning commission, boards. Often on a "Government" or "Boards & Commissions" page.
+3. **Positions** — seats within each body (Mayor, Council Member District 1, etc.)
+4. **People** — who currently holds each position, with start dates if available.
+5. **Services + open data** — permits, programs, budgets, meeting schedules.
+
+At each layer, look for names, types, URLs, descriptions, contact info, and any relationships to other entities.
 
 **Detail levels:** Ask what depth they want:
 - **Quick** — name, type, URL, description per entity
@@ -156,65 +188,155 @@ Frame contributions around what the user brings:
 
 Do NOT fabricate information. If you can't find something, leave it out. Note what you couldn't find so the user can fill gaps.
 
-### Step 5: Authenticate and Submit
+### Step 5: Review Before Submitting
 
-Before submitting, check for a token:
+Before any submissions, show the user exactly what will be proposed. Present a summary table:
 
-```bash
-echo ${JURISDICTIONAL_TOKEN}
+```
+Ready to submit for Vacaville Police Department (agency #1234):
+
+  Field       Current          Proposed                   Source
+  ─────       ───────          ────────                   ──────
+  phone       (empty)          707-449-5200               cityofvacaville.com/police
+  url         (empty)          cityofvacaville.com/police cityofvacaville.com/police
+  description (empty)          Primary law enforcement...  cityofvacaville.com/police
+
+Submit these 3 changes? (y/n)
 ```
 
-If the variable is empty:
+Always show what's changing, what the source is, and let the user approve before calling the API. One entity at a time — don't batch multiple entities into a single approval.
+
+### Step 6: Authenticate (if not already signed in)
+
+If the user signed in at Step 0, skip this. Otherwise, check for a token now:
 
 ```bash
-cat ~/.jurisdictional/token 2>/dev/null
+echo ${JURISDICTIONAL_TOKEN} 2>/dev/null; cat ~/.jurisdictional/token 2>/dev/null
 ```
 
-If no token is found:
-1. Say: "You'll need to sign in to submit contributions directly. Opening jurisdictional.org..."
-2. Run: `open https://jurisdictional.org/auth/cli`
-3. Ask: "Paste the token shown on that page, or set `JURISDICTIONAL_TOKEN` in your shell and restart Claude Code."
+If no token, say: "To submit these, you'll need to sign in." Then run `open https://jurisdictional.org/auth/cli` and ask for the token.
 
-If a token is found, confirm: "Signed in. Contributions will appear in your account at jurisdictional.org."
+### Step 7: Submit and Verify
 
-### Step 6: Submit
-
-For each entity the user wants to contribute, call the `propose_change` MCP tool once per field:
+For each approved entity, call `propose_change` once per field:
 
 ```
 propose_change(
   entity_type: "agency",
-  entity_id: <id from API>,
+  entity_id: 1234,
   field_name: "phone",
-  new_value: "+1-707-448-6000",
-  source_url: "https://solanoid.com/contact",
-  notes: "Listed on the contact page"
+  new_value: "707-449-5200",
+  source_url: "https://www.cityofvacaville.com/police",
+  notes: "Listed on department contact page"
 )
 ```
 
+**After each entity, verify the change landed by re-querying the API:**
+
+```
+get_agency_details(id: 1234)
+```
+
+Show a before/after comparison and the verification links:
+
+```
+✓ Vacaville Police Department — 3 changes submitted
+
+  phone:       (was empty) → 707-449-5200 ✓
+  url:         (was empty) → cityofvacaville.com/police ✓
+  description: (was empty) → Primary law enforcement... ✓
+
+  See this entity:      https://jurisdictional.org/agencies/1234
+  See your changes:     https://jurisdictional.org/users/contributions
+  See the jurisdiction: https://jurisdictional.org/jurisdictions/70118
+```
+
+The re-query proves the data landed. The links let the user verify on the site.
+
+**After all submissions, show a session summary:**
+
+```
+Session complete — 12 changes submitted across 4 entities:
+
+  Entity                          Changes  Status
+  ──────                          ───────  ──────
+  Vacaville Police Department     3        pending review
+  Vacaville Fire Department       4        pending review
+  Parks & Recreation              3        pending review
+  City Council                    2        pending review
+
+  Your contributions: https://jurisdictional.org/users/contributions
+  Vacaville overview:  https://jurisdictional.org/jurisdictions/70118
+```
+
 **How to get entity IDs:**
-- For existing entities: use `search_agencies`, `get_agency_details`, etc. — the response includes `id`
-- For entities not yet in the database: say so. Direct contributions only work against existing entities.
-  New entities should still go via GitHub PR (the existing data-repo flow) until the create API exists.
-
-**Submit in batches, show progress:**
+- For existing entities: `search_agencies`, `get_agency_details`, etc. return `id` in the response
+- For new entities: use `create_entity` first, then `propose_change` to fill in fields:
 
 ```
-Submitting contributions for Solano Irrigation District...
-  ✓ phone → propose_change submitted
-  ✓ website → propose_change submitted
-  ✓ address → propose_change submitted
+create_entity(
+  entity_type: "agency",
+  name: "Parks & Recreation Department",
+  jurisdiction_id: 70118,
+  entity_subtype: "executive",
+  source_url: "https://cityofvacaville.gov/parks"
+)
+← returns entity_id: 12847
 
-Submitting for District Manager position...
-  ✓ title → propose_change submitted
-
-4 contributions submitted. They'll appear in your account at:
-https://jurisdictional.org/users/contributions
+propose_change(entity_type: "agency", entity_id: 12847, field_name: "phone", ...)
+propose_change(entity_type: "agency", entity_id: 12847, field_name: "address", ...)
 ```
 
-After each batch, pause and ask: "Want to continue with the next entity, or check anything?"
+**Entity Relationship Diagram — follow this for creation order:**
 
-**Local files are optional.** If the user wants a local record of what they contributed, write JSON files per the schema. But the submission is the `propose_change` call — not the file.
+```
+Jurisdiction (already exists via juricode)
+  └── Agency (belongs_to jurisdiction)
+        ├── Service (belongs_to agency)
+        ├── Body (belongs_to agency + jurisdiction)
+        │     └── Position (belongs_to body + agency)
+        │           └── Person → Tenure (links person to position)
+        └── Position (can belong_to agency directly, without a body)
+```
+
+**Required foreign keys per entity type:**
+
+| Creating a... | Required FKs | Example |
+|---|---|---|
+| agency | `jurisdiction_id` | Parks & Rec under Vacaville |
+| body | `jurisdiction_id` + `agency_id` | City Council under City Manager's Office |
+| service | `agency_id` | "Park Reservations" under Parks & Rec |
+| position | `body_id` (or `agency_id`) | "Council Member Seat 1" under City Council |
+| person | `position_id` (creates tenure) | "Ron Rowlett" holding Mayor position |
+
+Note: `jurisdiction_id` is always required in the tool schema but only meaningful for agency and body. Position inherits its jurisdiction through its body/agency.
+
+**Create top-down.** Each `create_entity` returns an `entity_id` you need for the next layer:
+
+```
+create_entity(type: "agency", name: "City Manager", jurisdiction_id: 70118)
+  → agency_id: 100
+
+create_entity(type: "body", name: "City Council", jurisdiction_id: 70118, agency_id: 100)
+  → body_id: 200
+
+create_entity(type: "position", name: "Mayor", jurisdiction_id: 70118, body_id: 200)
+  → position_id: 300
+
+create_entity(type: "person", name: "Ron Rowlett", jurisdiction_id: 70118, position_id: 300)
+  → person_id: 400 (tenure auto-created linking person 400 to position 300)
+```
+
+Available `entity_subtype` values:
+- **agency**: executive, legislative, judicial, independent, educational, public_safety
+- **body**: council, commission, board, committee
+- **service**: health, education, housing, transportation, employment, public_safety, utilities, recreation, social_services
+
+**Local files are optional.** If the user wants a local record, write JSON files per the schema. But the submission is the `propose_change` call — not the file.
+
+**Tracking contributions.** Use `get_change_status` with the `change_id` values from `propose_change` to check status at any point in the session. Each response includes a direct URL to verify on the site. The contributions page at jurisdictional.org updates in real time — the user can have it open in a browser and watch changes appear as they're submitted from this session.
+
+**Two modes.** The user can work through each entity conversationally (review before submit) or say "fill in everything you can find" — in which case research and submit maximally, showing the full session summary at the end with all `change_id`s and URLs.
 
 ## Guidelines
 
