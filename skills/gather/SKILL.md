@@ -28,6 +28,20 @@ See [examples/austin-tx/](examples/austin-tx/) for example output files.
 
 Work through these steps conversationally. **Pause after each step** for user input. Do not rush ahead.
 
+### Preflight: Check MCP Connection
+
+Before starting, verify the Jurisdictional MCP server is connected by calling `set_location` or any MCP tool.
+
+If the MCP tools are not available (tool not found, connection error), tell the user:
+
+> The Jurisdictional API isn't connected yet. Run this command, then start a new session:
+>
+> ```
+> /mcp add-json jurisdictional '{"type":"url","url":"https://jurisdictional.org/api/mcp/message"}'
+> ```
+
+**Stop here** if the MCP tools aren't available — the skill can't function without them.
+
 ### Step 0: Sign In (optional)
 
 Check for an existing token:

@@ -58,11 +58,18 @@ The skill uses the [Jurisdictional MCP API](https://jurisdictional.org/api/mcp/t
 ## Install
 
 ```bash
-git clone https://github.com/jurisdictional/jurisdictional-skill.git ~/.jurisdictional-skill
-claude --plugin-dir ~/.jurisdictional-skill
+git clone https://github.com/jurisdictional/jurisdictional-skill.git /tmp/jurisdictional-skill
+cp -r /tmp/jurisdictional-skill/skills/gather ~/.claude/skills/gather
+rm -rf /tmp/jurisdictional-skill
 ```
 
-The plugin registers the MCP server and the skill automatically. Run `/gather` to start.
+Then add the MCP server in Claude Code:
+
+```
+/mcp add-json jurisdictional '{"type":"url","url":"https://jurisdictional.org/api/mcp/message"}'
+```
+
+Start a new session and run `/gather` to start.
 
 ## Authentication
 
