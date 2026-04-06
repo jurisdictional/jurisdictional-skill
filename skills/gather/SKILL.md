@@ -150,19 +150,13 @@ If they want to contribute, continue to Step 4.
 
 Based on what's missing, use `WebSearch` and `WebFetch` to research the official government website.
 
-**If `WebFetch` gets blocked** (403, Cloudflare, Akamai `SERVE_403`), try these fallbacks in order:
+**When `WebFetch` gets blocked** (403, Cloudflare, bot detection) — this is common with government sites. Don't retry the same URL. Instead:
 
-1. **`WebSearch` instead of `WebFetch`.** Search for `site:cityofvacaville.gov departments` — search results often contain the information you need without hitting the site directly. Search snippets, cached pages, and indexed content are often sufficient for department listings.
+1. **`WebSearch` first.** Search for `site:cityofvacaville.gov departments` — search snippets and cached content often have what you need without hitting the site directly.
 
-2. **Wikipedia and other public sources.** Search for "[City] government departments Wikipedia" — Wikipedia often lists major departments, the city council structure, and key officials with citations.
+2. **Wikipedia and other public sources.** Wikipedia often lists major departments, council structure, and key officials with citations.
 
-3. **Open a browser** so the user can see and interact with the page:
-   ```bash
-   bin/fetch-page --visible <url>
-   ```
-   The user handles any CAPTCHA/consent, then presses Enter. The script grabs the page content.
-
-4. **Ask the user.** They may already know the departments, have the site open in their browser, or have a PDF org chart. Don't spend 5 attempts hitting a blocked site — just ask.
+3. **Ask the user for the page content.** Say: "That site is blocking me. Could you open [URL] in your browser and paste the page content here? Just the text is fine, or HTML if you have it." Most users already have their browser open. This is the fastest path — don't overthink it.
 
 **Follow the data hierarchy.** Work top-down — fill the layer that's missing before moving deeper:
 

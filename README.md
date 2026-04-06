@@ -62,7 +62,7 @@ git clone https://github.com/jurisdictional/jurisdictional-skill.git ~/.jurisdic
 claude --plugin-dir ~/.jurisdictional-skill
 ```
 
-The plugin registers the MCP server, the skill, and the `fetch-page` browser tool automatically. Run `/gather` to start.
+The plugin registers the MCP server and the skill automatically. Run `/gather` to start.
 
 ## Authentication
 
