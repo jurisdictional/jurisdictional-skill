@@ -1,123 +1,109 @@
 # jurisdictional-skill
 
-A [Claude Code plugin](https://docs.anthropic.com/en/docs/claude-code) that connects you to the governments that serve your address.
+A [Claude Code plugin](https://code.claude.com/docs/en/plugins) that connects you to the governments that serve your address, and helps you add what's missing to [jurisdictional.org](https://jurisdictional.org).
 
 Tell it where you live.
-It shows you every layer of government — federal to local — the agencies, the people in office, the services you can access, and what's missing.
-Then, if you want, it helps you fill the gaps.
+It shows you every layer of government — federal to local — the agencies, the councils and the people on them, the services you can use, and what nobody has recorded yet.
+Then, if you want, it helps you fill the gaps from the government's own website, with a source link on every fact.
+
+## Install
+
+In Claude Code:
+
+```
+/plugin marketplace add jurisdictional/jurisdictional-skill
+/plugin install jurisdictional@jurisdictional
+```
+
+Start a new session, then:
+
+```
+/gather 300 Hemlock St, Vacaville, CA
+```
+
+The plugin connects Claude to the Jurisdictional MCP server at `https://jurisdictional.org/api/mcp/message`.
+To use the server without the skill: `claude mcp add --transport http jurisdictional https://jurisdictional.org/api/mcp/message`.
 
 ## Usage
 
-```
-/gather 300 Hemlock Ave, Vacaville, CA
-```
-
-The skill starts by showing you what's there, not asking what to contribute.
+The skill starts by showing you what's there, not by asking what to contribute.
 Exploring is a complete experience — you don't have to add anything.
 
-If you do want to help, the skill researches public sources, structures what it finds, and submits contributions directly to [jurisdictional.org](https://jurisdictional.org) via the API.
+If you do want to help, it reads the official website, shows you each proposed fact next to its source, and submits only what you approve.
 
 ## How it works
 
 ```mermaid
 flowchart TD
-    subgraph inputs["Inputs"]
-        user["User: address + local knowledge"]
-        api["Jurisdictional API\nset_location, explore,\nsearch, details"]
-        gov["Government .gov websites"]
+    subgraph explore["Explore (no sign-in)"]
+        e1["set_location\naddress → juricode"]
+        e2["explore + get_coverage\nwhat exists, what's missing"]
     end
 
-    subgraph explore["Explore"]
-        e1["Set location\n→ geocode → juricode"]
-        e2["Pick interests\nelections, housing,\neducation, safety..."]
-        e3["See what exists\nagencies, services,\nofficials, bodies"]
-        e4["Find gaps\nwhat's missing\nor outdated"]
+    subgraph contribute["Contribute (signed in)"]
+        g1["gather\nfetch the official page"]
+        g2["Review\nevery value beside its source"]
+        g3["Submit\ncreate_entity · import_jurisdiction\npropose_change"]
+        g4["Verify\nre-query · get_change_status\nget_coverage again"]
     end
 
-    subgraph contribute["Contribute (optional)"]
-        g1["Research gaps\nfrom public sources"]
-        g2["Authenticate\nvia jurisdictional.org"]
-        g3["Submit\nvia propose_change API"]
-    end
-
-    user --> e1
-    api --> e1
-    api --> e3
+    user["You: an address,\nlocal knowledge"] --> e1
     e1 --> e2
-    e2 --> e3
-    e3 --> e4
-    e4 -->|"user wants\nto contribute"| g1
-    gov --> g1
-    g1 --> g2
-    g2 --> g3
-    g3 -->|"contributions appear at"| site["jurisdictional.org"]
+    e2 -->|"you want to help"| g1
+    gov["The government's\nown website"] --> g1
+    g1 --> g2 --> g3 --> g4
+    g4 --> site["jurisdictional.org"]
 ```
 
-The skill uses the [Jurisdictional MCP API](https://jurisdictional.org/api/mcp/tools) — 15 tools for searching jurisdictions, agencies, services, bodies, people, and positions by location, topic, or name.
+## Signing in
 
-## Install
+**Exploring works without an account.**
+Researching pages and contributing need a jurisdictional.org token:
 
-```bash
-git clone https://github.com/jurisdictional/jurisdictional-skill.git /tmp/jurisdictional-skill
-cp -r /tmp/jurisdictional-skill/skills/gather ~/.claude/skills/gather
-rm -rf /tmp/jurisdictional-skill
-```
+1. Open [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli), sign in with GitHub, and copy the token.
+2. Save it where the plugin reads it, without pasting it into the chat:
 
-Then add the MCP server in Claude Code:
+   ```
+   ! mkdir -p ~/.jurisdictional && pbpaste > ~/.jurisdictional/token && chmod 600 ~/.jurisdictional/token
+   ```
 
-```
-/mcp add-json jurisdictional '{"type":"url","url":"https://jurisdictional.org/api/mcp/message"}'
-```
+   (On Linux, use `xclip -o -selection clipboard` in place of `pbpaste`.)
+3. Run `/mcp` and reconnect `jurisdictional`, or start a new session.
 
-Start a new session and run `/gather` to start.
-
-## Authentication
-
-**Exploration works without sign-in.** The MCP tools are public.
-
-To submit contributions, the skill will prompt you to sign in:
-
-1. Opens `https://jurisdictional.org/auth/cli` in your browser
-2. You authenticate via GitHub
-3. Paste the token, or set `JURISDICTIONAL_TOKEN` in your shell
+The plugin sends the token only when that file exists; without it, you get the public read-only tools.
+If you added the server by hand with an `Authorization` header, update that header instead.
 
 ## What you can contribute
 
-| Task | Description |
+| Contribution | How it lands |
 |------|-------------|
-| Discover agencies | Find departments not yet in the database |
-| Add contacts | Phone, email, address for existing agencies |
-| Discover bodies | City councils, boards, commissions |
-| Add officials | Who holds office and their positions |
-| Add services | What residents can do or request |
-| Meeting schedules | When governing bodies meet |
-| Verify data | Check if existing records are still accurate |
-| Add budget info | Financial and budget data |
+| Departments a city is missing, or a whole city's agencies, bodies and services at once | New entities, live right away |
+| Services — what residents can pay, apply for, report or reserve, with the link to do it | New entities, live right away |
+| Councils, boards and their seats, and who holds each seat | New entities and tenures, live right away |
+| Meetings, with agenda, minutes and video links | New entities, live right away |
+| Phone, email, website and other fixes to existing records | Proposed changes, reviewed by a person |
+| A second source confirming a value already there | Corroboration, recorded right away |
+| Official headshots, city logos and flags | Image candidates, reviewed before they're shown |
 
-## Civic topics
-
-The skill can focus on what you care about:
-
-Elections & voting, Budget & finance, Planning & zoning, Education, Water & utilities, Housing, Public safety, Transportation, Environment, Public health, Economic development, Civil rights
-
-Or just tell it what you're following — "I've been tracking city council votes on water rates" works too.
+Every value needs a source: a page fetched from the government's site, or your own local knowledge, attributed as yours.
+Search snippets and the model's memory are never sources.
 
 ## Data format
 
-Contributions go directly to jurisdictional.org via the `propose_change` API.
-If you also want local files, the skill can write one JSON file per entity:
+Contributions go to jurisdictional.org through the MCP tools.
+If you also want local files, the skill can write one JSON file per entity, in the format of the [jurisdictional/data](https://github.com/jurisdictional/data) repo:
 
 ```json
 {
   "_meta": {
-    "source": "https://www.cityofvacaville.com/departments/police",
-    "retrieved_at": "2026-04-02",
+    "source": "https://www.cityofvacaville.gov/government/police-department",
+    "retrieved_at": "2026-10-23",
     "contributor": "your-github-username"
   },
   "name": "Vacaville Police Department",
   "agency_type": "police",
   "jurisdiction": "vacaville-ca",
-  "url": "https://www.cityofvacaville.com/departments/police",
+  "url": "https://www.cityofvacaville.gov/government/police-department",
   "phone": "707-449-5200"
 }
 ```
@@ -128,4 +114,10 @@ See [schema.md](skills/gather/schema.md) for field definitions and [examples/aus
 
 The best way to contribute is to run `/gather` for your city.
 
-Contributions to the skill itself are welcome — see [SKILL.md](skills/gather/SKILL.md) for the prompt and flow definition.
+Changes to the skill itself are welcome.
+The flow is in [SKILL.md](skills/gather/SKILL.md), and what each MCP tool does is in [references/tools.md](skills/gather/references/tools.md).
+Before opening a pull request, run `claude plugin validate .` and the scenarios in [TESTING.md](TESTING.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).

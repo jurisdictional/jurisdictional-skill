@@ -1,0 +1,15 @@
+{
+  "name": "jurisdictional",
+  "description": "Civic data plugins from jurisdictional.org",
+  "owner": {
+    "name": "Jurisdictional",
+    "url": "https://jurisdictional.org"
+  },
+  "plugins": [
+    {
+      "name": "jurisdictional",
+      "source": "./",
+      "description": "Explore the governments that serve an address and contribute sourced civic data to jurisdictional.org"
+    }
+  ]
+}
