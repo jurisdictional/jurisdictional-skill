@@ -6,8 +6,7 @@
   },
   "name": "Fire Safety Inspection",
   "agency": "austin-fire-department",
-  "category": "inspection",
+  "category": "public_safety",
   "description": "Commercial building fire safety inspection",
-  "cost": "0",
-  "processing_time": "2-4 weeks"
+  "cost": "0"
 }

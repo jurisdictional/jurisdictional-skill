@@ -7,8 +7,7 @@
   "name": "File a Police Report",
   "agency": "austin-police-department",
   "url": "https://www.austintexas.gov/police/report",
-  "category": "application",
+  "category": "public_safety",
   "description": "File a non-emergency police report online or in person",
-  "cost": "0",
-  "processing_time": "24-48 hours"
+  "cost": "0"
 }

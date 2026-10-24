@@ -1,12 +1,13 @@
 # Jurisdictional Data Schema
 
-There are two contribution formats: the **data repo format** (preferred) and the legacy **bundle format**.
+This is the format for **local files**, matching the [jurisdictional-data](https://github.com/jurisdictional/data) repo.
+Contributions to jurisdictional.org go through the MCP tools (`create_entity`, `import_jurisdiction`, `propose_change`), not through these files.
 
-## Data Repo Format (Preferred)
+## Data Repo Format
 
 One entity per file, with a `_meta` provenance block.
 Cross-references use filename slugs (not database IDs).
-Files are validated against JSON Schemas in `schemas/` of the data repo.
+Files are validated against JSON Schemas in `schemas/` of the data repo, and every schema rejects unknown fields.
 
 ### Jurisdiction File
 
@@ -74,12 +75,36 @@ The source of truth is the `agency_type` enum on the `search_agencies` MCP tool.
   "name": "File a Police Report",
   "agency": "austin-police-department",
   "url": "https://www.austintexas.gov/police/report",
-  "category": "application",
+  "category": "public_safety",
   "eligibility": "Must be a victim or witness of a non-emergency crime",
   "cost": "0",
   "description": "File a non-emergency police report online or in person"
 }
 ```
+
+`category` takes a service type: health, education, housing, transportation, employment, public_safety, utilities, recreation, social_services.
+
+### Body File
+
+`bodies/austin-city-council.json`:
+
+```json
+{
+  "_meta": {
+    "source": "https://www.austintexas.gov/department/city-council",
+    "retrieved_at": "2026-03-01",
+    "contributor": "your-github-username"
+  },
+  "name": "Austin City Council",
+  "legislative_type": "council",
+  "jurisdiction": "austin-tx",
+  "url": "https://www.austintexas.gov/department/city-council",
+  "size": 11
+}
+```
+
+A governing council or board belongs to its jurisdiction; set `agency` only for a body that sits inside a department.
+Bodies have no `description` field.
 
 ### Person File
 
@@ -94,10 +119,12 @@ The source of truth is the `agency_type` enum on the `search_agencies` MCP tool.
   },
   "first_name": "Robin",
   "last_name": "Henderson",
-  "email": "chief@austintexas.gov",
-  "image": "https://www.austintexas.gov/sites/default/files/chief-henderson.jpg"
+  "email": "chief@austintexas.gov"
 }
 ```
+
+There is no `image` field.
+Officials' photos go through the review queue with the `submit_portrait_candidate` MCP tool instead.
 
 ### Position File
 
