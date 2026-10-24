@@ -86,7 +86,8 @@ Files are validated against JSON Schemas in `schemas/` of the data repo.
   },
   "first_name": "Robin",
   "last_name": "Henderson",
-  "email": "chief@austintexas.gov"
+  "email": "chief@austintexas.gov",
+  "image": "https://www.austintexas.gov/sites/default/files/chief-henderson.jpg"
 }
 ```
 

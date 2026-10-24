@@ -5,5 +5,6 @@
     "contributor": "example-user"
   },
   "first_name": "Robin",
-  "last_name": "Henderson"
+  "last_name": "Henderson",
+  "image": "https://www.austintexas.gov/sites/default/files/chief-henderson.jpg"
 }
