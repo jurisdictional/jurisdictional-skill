@@ -1,8 +1,9 @@
 #!/bin/sh
 # headersHelper for the Jurisdictional MCP server.
 # Prints the Authorization header when ~/.jurisdictional/token holds a key (jur_...), and {} otherwise.
-# With no header the server serves its public read tools; an empty or unknown bearer gets 401,
-# so a file holding anything else (say, a pasted command) falls back to anonymous instead of failing.
+# With no header (or an empty bearer) the server serves its public read tools; an unknown key gets 401
+# for the whole connection, so a file holding anything else (say, a pasted command) falls back to
+# anonymous instead of failing.
 # Claude Code strips TOKEN-like env vars from plugin helpers, so the token is read from the file.
 token_file="${HOME}/.jurisdictional/token"
 token=""

@@ -57,12 +57,13 @@ propose_change(entity_type: "agency", entity_id: 1234, field_name: "phone",
 
 Always search first (`search_agencies`, `search_bodies`, `search_services`, `search_people`, `search_positions`).
 Every field set on the new row is recorded as a claim citing `source_url`, and is **live immediately**, with no review.
+`source_url` is only cited — it never becomes a link. Live links are their own arguments: `website_url` (agency) and `online_url` (service).
 
 | entity_type | Needs | Notes |
 |---|---|---|
-| agency | `jurisdiction_id` | `entity_subtype` = agency_type (function only, or omit). With the default source, `source_url` **becomes `website_url`** — pass the agency's own page, not a list of departments. |
+| agency | `jurisdiction_id` | `entity_subtype` = agency_type (function only, or omit). `website_url` = the agency's own page, not the list of departments you found it on; omit it if the agency has none. |
 | body | `jurisdiction_id` | Omit `agency_id` for a council or board: it belongs to the jurisdiction. `entity_subtype` = legislative_type (council, commission, board). `source_url` becomes the body's `source`. |
-| service | `jurisdiction_id`, `agency_id` | `source_url` **becomes `online_url`** — see [services.md](services.md). `cost`, `eligibility`. |
+| service | `jurisdiction_id`, `agency_id` | `online_url` = the action link (portal, form), not the page describing it — see [services.md](services.md). `cost`, `eligibility`. |
 | position | `jurisdiction_id`, `body_id` (or `agency_id`) | A position with the same label under the same body is returned, not duplicated. |
 | person | `jurisdiction_id`; `position_id` to seat them | Use `first_name`/`last_name` exactly as published. With `position_id`, a tenure is created and **`source_url` is required** (the roster or bio page). `start_date` and `term_ends_on` only when the source publishes them. Re-creating a person who already holds the seat refreshes that tenure's source instead of adding a second one. |
 | meeting | `jurisdiction_id`, `body_id`, `start_time` | `agenda_url`, `minutes_url`, `video_url`, `status` (scheduled, completed, cancelled, postponed), `external_id` (eScribe GUID, Granicus clip id). |
@@ -70,14 +71,13 @@ Every field set on the new row is recorded as a claim citing `source_url`, and i
 
 `source_key` names the source's registry entry, default `municipal_official_sites` (a government's own site).
 When the page is not the government's own site — a state municipal league profile, a county directory — say so in `notes`, and ask an admin for the right key (`list_data_sources`).
-Only the default key sets an agency's `website_url` from `source_url`.
 
 ### `import_jurisdiction` — a whole city in one call
 
 For an empty or thin jurisdiction: agencies, their bodies and services, and jurisdiction-level bodies, in one transaction.
 
 ```
-import_jurisdiction(jurisdiction_id: 70118, dry_run: true,
+import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the departments page>",
   bodies: [{ref: "council", name: "Vacaville City Council", legislative_type: "council",
             url: "...", source: "<roster page>"}],
   agencies: [{ref: "pd", name: "Vacaville Police Department", agency_type: "police",
@@ -93,8 +93,9 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true,
 - Agency fields: name, description, agency_type, website_url, phone, email, address, bodies, services.
   Body: name, description, legislative_type, url, source, meeting_url, phone, email, address.
   Service: name, description, service_type, online_url, eligibility_requirements, cost, contact_info.
-- It records no per-field source claims, unlike `create_entity`.
-  Every value must still come from a page you fetched, and the Step 4 review table must name it.
+- Each created row gets one claim per field set, citing the item's own `source_url`, or the top-level `source_url` for items without one; `counts.claims` reports how many.
+  Give an item its own `source_url` whenever its values came from a different page than the top-level one.
+  Matched (`existing`) rows get no claims.
 - Positions and people are not part of it: seat officials afterwards with `create_entity` or `reconcile_roster`.
 
 `import_civicplus_directory` is for admins working from the jurisdictional repo's import script; skip it in conversation.
@@ -128,8 +129,10 @@ submit_jurisdiction_image_candidate(jurisdiction_id: 70118, kind: "logo" | "flag
 
 - `submit_sourcing_result(task_id, status: "success" | "partial" | "failed", data, evidence, failure_reason?)` closes a task from `get_pending_tasks`.
   Each `data` key is read as a field on the task's entity and proposed as a change (`{"phone": "707-449-5200"}`), so only put fields of that entity there.
+  All fields are validated first: an unknown field fails the call, writes nothing, and lists the valid ones.
+  A value the entity already has is recorded as a corroboration, as with `propose_change`.
   When you already submitted the values with `propose_change` or `create_entity`, pass `data: {}` so nothing is proposed twice.
-  `evidence`: `{"source_url": "<page>"}`.
+  `evidence` is required for `success` and `partial`: `{"source_url": "<the page the values came from>"}`, optionally with `source_key`.
   `failed` needs a `failure_reason` ("no published roster", "site blocks the fetcher").
 - `get_change_status(change_ids: [...])` → pending, approved, published or rejected for each; `not_found` for an unknown id.
 - `record_coverage_gap(jurisdiction_id, reason, evidence_url, detail)` (admin) marks a jurisdiction as blocked so `get_next_uncovered` skips it.

@@ -48,25 +48,25 @@ Ask the user if a whole category seems borderline.
 - `cost`: a plain number in dollars (`"50"`, `"12.50"`). Put tiered or conditional fees in `description`.
 - `eligibility`: who may use it, as published.
 
-## `source_url` becomes the live `online_url` — pass the action link
+## `source_url` is the page you read; `online_url` is the link a resident clicks
 
-`create_entity(entity_type: "service", source_url: X)` writes X straight into the service's `online_url`, applied immediately with no review.
-A later `propose_change` to `online_url` queues for review like any other field change, so a wrong URL stays live in the meantime.
-
-So set `source_url` to the URL a resident should actually click — the payment portal, the application form, the registration page:
+`create_entity` only cites `source_url`: each field set is recorded as a claim pointing at it, and it never becomes a link.
+Pass the action link — the payment portal, the application form, the registration page — as `online_url`.
+It is live immediately with no review, and a later `propose_change` to it queues for review, so get it right the first time:
 
 ```
 create_entity(entity_type: "service", name: "Utility Bill Pay", agency_id: 16770, jurisdiction_id: 70118,
-              source_url: "https://city.munisselfservice.com/css/citizens/UtilityBilling/Default.aspx")
-              # ✅ the portal — becomes online_url, live immediately
+              source_url: "https://www.city.gov/how-do-i",
+              online_url: "https://city.munisselfservice.com/css/citizens/UtilityBilling/Default.aspx")
+              # ✅ cites the page read; the portal is the live link
 
 create_entity(entity_type: "service", name: "Online Permit Application", agency_id: 16769, jurisdiction_id: 70118,
               source_url: "https://www.city.gov/permitting")
-              # ❌ the department page you found it on — now the live online_url is a description, not an action
+              # ⚠️ no online_url — the service has no live link until one is proposed
 ```
 
-If the action lives on a third-party portal, that portal URL is the one to pass — even though it is off-domain.
-Name the page you found it on in `description`.
+If the action lives on a third-party portal (Tyler, Accela, Granicus), that portal URL is the `online_url` — even though it is off-domain.
+Omit `online_url` rather than pass a page that only describes the service.
 
 After creating services, call `get_service_details` and check `online_url` specifically.
 

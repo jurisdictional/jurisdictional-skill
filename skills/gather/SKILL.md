@@ -22,7 +22,7 @@ The user has local knowledge you don't — defer to them on what's accurate.
 ## References
 
 - [references/tools.md](references/tools.md) — every MCP tool used here: who can call it, its fields, and what it does to live data. Read it before your first write.
-- [references/services.md](references/services.md) — where services hide on city websites, what counts, and the `online_url` trap.
+- [references/services.md](references/services.md) — where services hide on city websites, what counts, and and `online_url` vs `source_url`.
 - [schema.md](schema.md) — the local-file format and the allowed `agency_type` values. [examples/austin-tx/](examples/austin-tx/) is a sample.
 
 ## Provenance is the point
@@ -247,8 +247,8 @@ Jurisdiction (exists, from the juricode)
         └── Position (an agency role, without a body)
 ```
 
-**`source_url` becomes a live field on new entities** — the agency's `website_url`, the service's `online_url`.
-Pass the agency's own page and the service's action link, not the list page where you found them.
+**`source_url` is the citation; live links are separate.** Pass the page you read as `source_url`, the agency's own page as `website_url`, and the service's action link as `online_url` — never the list page where you found them.
+Both links are live with no review.
 
 **Two modes.** The user can approve each entity, or say "fill in everything you can find" — then research and submit fully, and show every `change_id` and URL in the summary at the end.
 Even then, run `import_jurisdiction` and `reconcile_roster` as dry runs first, and show the result before writing.
