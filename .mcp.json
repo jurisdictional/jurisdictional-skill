@@ -3,9 +3,7 @@
     "jurisdictional": {
       "type": "http",
       "url": "https://jurisdictional.org/api/mcp/message",
-      "headers": {
-        "Authorization": "Bearer ${JURISDICTIONAL_TOKEN}"
-      }
+      "headersHelper": "${CLAUDE_PLUGIN_ROOT}/bin/jurisdictional-headers.sh"
     }
   }
 }
