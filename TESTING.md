@@ -2,7 +2,7 @@
 
 Each scenario is a user story with a check you can run.
 Run them before a release and after any server release that changes the MCP tools.
-They line up with the evals in jurisdictional's `docs/OFFICIAL_SKILL_PLAN.md` (§5).
+They line up with the evals in the platform's listing plan (`docs/OFFICIAL_SKILL_PLAN.md` §5, in the private jurisdictional repo).
 
 ## Setup
 

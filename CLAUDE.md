@@ -1,33 +1,39 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Start with [PLAN.md](PLAN.md).
 
 ## What This Is
 
-A Claude Code plugin for [jurisdictional.org](https://jurisdictional.org) containing the `gather` skill — a conversational interface for exploring local government structure and contributing civic data.
+A Claude Code plugin for [jurisdictional.org](https://jurisdictional.org) containing the `gather` skill — a conversational interface for exploring local government structure and contributing sourced civic data.
 
-The skill uses the Jurisdictional MCP API (`set_location`, `explore`, `search_*`, `get_*_details`, `propose_change`) for live data, supplemented by `WebSearch`/`WebFetch` for gap-filling from government websites.
+The skill is a thin client of the Jurisdictional MCP server (`~/workspace/jurisdictional`, `lib/jurisdictional/mcp/tools/`).
+The server's live `tools/list` is the source of truth for tool names, fields and enums; when it and this repo disagree, fix this repo.
 
 ## Repository Structure
 
-- `.claude-plugin/plugin.json` — Plugin manifest (name, version, author, keywords)
-- `.mcp.json` — MCP server config pointing to `https://jurisdictional.org/api/mcp/message`
-- `skills/gather/SKILL.md` — The skill definition: explore → find gaps → research → submit
-- `skills/gather/schema.md` — Data model specification (one file per entity)
-- `skills/gather/examples/austin-tx/` — Example output in data-repo format
+- `.claude-plugin/plugin.json` — plugin manifest (bump `version` on every release)
+- `.claude-plugin/marketplace.json` — single-plugin marketplace: `/plugin marketplace add jurisdictional/jurisdictional-skill`
+- `.mcp.json` — the MCP server, with `headersHelper` → `bin/jurisdictional-headers.sh`
+- `bin/jurisdictional-headers.sh` — sends `Authorization: Bearer <~/.jurisdictional/token>` when the file exists, `{}` otherwise
+- `skills/gather/SKILL.md` — the flow: preflight → location → what exists → research → review → submit → verify
+- `skills/gather/references/tools.md` — what each MCP tool does to live data, and who can call it
+- `skills/gather/references/services.md` — gathering services
+- `skills/gather/schema.md` + `examples/austin-tx/` — local-file format; must validate against `jurisdictional-data/schemas/`
+- `TESTING.md` — scenarios with checks
 
 ## Key Concepts
 
-- **Juricode**: Given an address, returns every jurisdiction (federal → local) that governs that location. Foundation of the skill.
-- **MCP tools**: 15+ API tools including `set_location`, `explore`, `search_agencies`, `propose_change`, etc.
-- **Data repo format**: One JSON file per entity with `_meta` provenance block. Cross-references use filename slugs. Used for local file output; submissions go via `propose_change` API.
-- **Sourcing tasks**: The platform generates tasks (discover_agencies, extract_services, extract_meeting_schedule, etc.) that contributors can pick up.
-- **Auth**: Exploration is unauthenticated. Contributions require `JURISDICTIONAL_TOKEN` env var or token at `~/.jurisdictional/token`, obtained via browser-based GitHub OAuth at `/auth/cli`.
+- **Juricode**: given an address, every jurisdiction (federal → local) that governs that location.
+- **Access tiers**: no token → 19 public read tools. Signed in → `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, image candidates. Admin → `reconcile_roster`, `end_tenure`, `merge_entities`, `delete_entity`, coverage reports.
+- **Auth**: an empty or invalid bearer gets HTTP 401 for the whole connection, so the helper must send no header when there's no token. Plugin helpers don't see `TOKEN`-like env vars, so the token lives in `~/.jurisdictional/token` (from `/auth/cli`).
+- **Writes**: `create_entity` and `import_jurisdiction` apply live; `propose_change` queues for review, or corroborates when the value is unchanged.
+- **Provenance**: values come only from pages fetched with `gather`, or from the user. Never search snippets or training data.
 
 ## When Modifying the Skill
 
-- The skill is invoked via `/gather [address or city, state]`. Arguments are passed as `$ARGUMENTS`.
-- Steps 1-3 are exploration (no auth needed). Steps 4-6 are contribution (auth required).
-- The skill pauses for user review at each step — don't remove pause points.
-- `disable-model-invocation: true` means the skill only runs when user-invoked.
-- The civic topics list and contribution types should stay in sync with the platform's collaborate page and sourcing task types.
+- Invoked via `/gather [address or city, state]`; arguments arrive as `$ARGUMENTS`. `disable-model-invocation: true` keeps it user-invoked.
+- Keep the pause points and the Step 4 review table.
+- Keep SKILL.md under 500 lines; put detail in `references/` (one level deep).
+- Check enums against the live schemas: `curl -s -X POST https://jurisdictional.org/api/mcp/message -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`.
+- Validate: `claude plugin validate .`, and ajv against `jurisdictional-data/schemas/` for the examples (see the commit that fixed them).
