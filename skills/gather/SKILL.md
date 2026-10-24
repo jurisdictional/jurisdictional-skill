@@ -1,9 +1,9 @@
 ---
 name: gather
-description: Connect with your local government — explore agencies, services, and officials, and contribute what you know
+description: Explore the governments that serve an address on jurisdictional.org — agencies, councils, officials, services, meetings — and contribute sourced civic data to fill the gaps. Use when the user runs /gather with an address or a city and state.
 disable-model-invocation: true
 user-invocable: true
-allowed-tools: WebSearch, WebFetch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
+allowed-tools: WebSearch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 argument-hint: [address or city, state]
 ---
 
@@ -19,525 +19,306 @@ Both are valid starting points. Not every session needs to produce a contributio
 
 The user has local knowledge you don't — defer to them on what's accurate.
 
-## Schema
+## References
 
-See [schema.md](schema.md) for the data model and field reference.
-See [examples/austin-tx/](examples/austin-tx/) for example output files.
+- [references/tools.md](references/tools.md) — every MCP tool used here: who can call it, its fields, and what it does to live data. Read it before your first write.
+- [references/services.md](references/services.md) — where services hide on city websites, what counts, and the `online_url` trap.
+- [schema.md](schema.md) — the local-file format and the allowed `agency_type` values. [examples/austin-tx/](examples/austin-tx/) is a sample.
+
+## Provenance is the point
+
+Every fact submitted must trace back to a page someone can open and check.
+Data without a source is opinion. Data with a source is evidence.
+
+- **Values come from pages you fetched with `gather`, or from the user.** Nothing else.
+- **`WebSearch` finds URLs; it is never a source of values.** Search snippets are not the page: a snippet can be stale, truncated or from another city. Find the URL, then `gather` it and read the value there.
+- **Never use training data as a source.** Departments get reorganized, officials leave, numbers change. Training knowledge may guide research ("this city probably has a Parks department — let me look"), but the submitted value must come from the page you find. If you think you know something but can't find it, say so: "I think the police number is X, but I can't find it on their site — can you check?"
+- **An empty field is better than an unsourced one.**
 
 ## Flow
 
 Work through these steps conversationally. **Pause after each step** for user input. Do not rush ahead.
 
-### Preflight: Check MCP Connection
+### Preflight: connection and sign-in
 
-Before starting, verify the Jurisdictional MCP server is connected by calling `set_location` or any MCP tool.
+Check your tool list.
 
-If the MCP tools are not available (tool not found, connection error), tell the user:
+1. **No Jurisdictional tools at all** (`set_location` is missing): the MCP server isn't connected. Tell the user, then stop — the skill can't work without it:
 
-> The Jurisdictional API isn't connected yet. Run this command, then start a new session:
->
-> ```
-> /mcp add-json jurisdictional '{"type":"url","url":"https://jurisdictional.org/api/mcp/message"}'
-> ```
+   > The Jurisdictional server isn't connected. Install the plugin:
+   >
+   > ```
+   > /plugin marketplace add jurisdictional/jurisdictional-skill
+   > /plugin install jurisdictional@jurisdictional
+   > ```
+   >
+   > Or add just the server: `claude mcp add --transport http jurisdictional https://jurisdictional.org/api/mcp/message`.
+   > Then start a new session.
 
-**Stop here** if the MCP tools aren't available — the skill can't function without them.
+2. **`set_location` but no `propose_change`**: connected, not signed in. Exploring works. Say so, and offer sign-in now or later.
 
-### Step 0: Sign In (optional)
+3. **`propose_change` present**: signed in. Say "Signed in to jurisdictional.org — you can explore and contribute."
+   If `reconcile_roster` is also present, the user is an admin; the admin paths in [tools.md](references/tools.md) are open.
 
-Check for an existing token:
+**Signing in.** Researching pages (`gather`) and every write need sign-in.
+Never print, echo or `cat` the token, and don't ask the user to paste it into the chat.
 
-```bash
-echo ${JURISDICTIONAL_TOKEN} 2>/dev/null; cat ~/.jurisdictional/token 2>/dev/null
-```
+1. Run `open https://jurisdictional.org/auth/cli`. The user signs in with GitHub and copies the token shown.
+2. Ask them to run this themselves, so the token goes from the clipboard to a file without entering the conversation:
 
-If a token is found, say: "Signed in to jurisdictional.org — you'll be able to explore and contribute."
+   ```
+   ! mkdir -p ~/.jurisdictional && pbpaste > ~/.jurisdictional/token && chmod 600 ~/.jurisdictional/token
+   ```
 
-If no token, offer to sign in but don't require it:
+   On Linux, `xclip -o -selection clipboard` replaces `pbpaste`.
+3. Ask them to run `/mcp` and reconnect `jurisdictional` (or start a new session), then check that `propose_change` now appears.
 
-> Want to sign in to jurisdictional.org? Signing in lets you submit contributions and track your changes.
->
-> A) Sign in (opens browser)
-> B) Skip — just explore for now
+The plugin reads `~/.jurisdictional/token` each time it connects.
+If the user added the server by hand with an `Authorization` header, that header is what counts: they update it there instead.
 
-If A: run `open https://jurisdictional.org/auth/cli` and ask the user to paste the token or set `JURISDICTIONAL_TOKEN`.
-
-If B: proceed. Steps 1-3 work without auth. The skill will prompt again at Step 5 if they decide to contribute.
-
-### Step 1: Where Are You?
+### Step 1: Where are you?
 
 If the user provided arguments, use them: `$ARGUMENTS`
 
-1. Use the `set_location` MCP tool with their address or city.
-   If `set_location` returns no result, fall back to keyword search:
-   ```
-   search_jurisdictions(query: "Vacaville", level: "place")
-   ```
-   Pick the best match and confirm with the user before proceeding.
-2. Present the **juricode** — the stack of governments that serve their location:
-   - Federal government
-   - State
-   - Congressional district
-   - State legislature
-   - County
-   - City / place
-   - School district
-   - Any special districts
-3. Store the `jurisdiction_ids` — you'll use them to scope every subsequent query
-4. Immediately pull entity coverage for each jurisdiction (don't wait to ask about topics)
+1. Call `set_location` with their address or city.
+   If it finds nothing, fall back to `search_jurisdictions(query: "Vacaville", level: "municipal")`, pick the best match, and confirm it with the user.
+   If the address looks wrong ("Ave" where the street is "St"), say so and suggest the fix rather than returning nothing.
+2. Present the **juricode** — the stack of governments that serve the location: federal, state, congressional district, state legislative districts, county, city, school district, special districts.
+   County subdivisions marked `kind: "non_governing"` are statistical areas, not governments: leave them out, or label them as such.
+3. Keep the `jurisdiction_ids`; they scope every later query.
 
-### Step 2: Show What Exists
+### Step 2: Show what exists
 
-Right after setting the location, pull all entity data. This is the first thing the user should see — what's known about their governments.
-
-Use `explore` with each focus type scoped to the user's `jurisdiction_ids`:
+Before asking anything, show what's known.
 
 ```
 explore(focus: "agencies", jurisdiction_ids: [...], limit: 50)
-explore(focus: "bodies", jurisdiction_ids: [...], limit: 50)
-explore(focus: "people", jurisdiction_ids: [...], limit: 50)
+explore(focus: "bodies",   jurisdiction_ids: [...], limit: 50)
+explore(focus: "people",   jurisdiction_ids: [...], limit: 50)
 explore(focus: "services", jurisdiction_ids: [...], limit: 50)
-```
-
-Then call `get_coverage` for each primary jurisdiction to get structured gap data:
-
-```
 get_coverage(jurisdiction_id: <place_id>)
+get_pending_tasks(jurisdiction_id: <place_id>, limit: 5)
 ```
 
-This returns entity counts, quality gaps (missing phone / website / email), and ranked recommendations. Use it to surface *specific* fields to gather rather than building a manual tally.
+`get_coverage` gives counts per layer, missing contacts and ranked recommendations — use it to name *specific* gaps instead of a manual tally.
+Keep any `task_id` from `get_pending_tasks`; Step 6 closes them.
+For a council or board, `get_body_details(id)` shows its seats and who holds them.
 
-**Data hierarchy.** Civic data builds up in layers:
+Civic data builds up in layers:
 
-1. **Jurisdictions** — already exist (that's the juricode from Step 1)
-2. **Agencies** — city departments, offices, authorities
+1. **Jurisdictions** — already exist (the juricode)
+2. **Agencies** — departments, offices, authorities
 3. **Governing bodies** — city council, commissions, boards
-4. **Positions** — seats in those bodies (Mayor, Council Member Seat 1, etc.)
-5. **People** — who holds those positions right now (as tenures)
-6. **Services + open data** — programs, permits, budgets. Listed last because services attach to agencies,
-   *not* because they matter least — they are what most residents actually come looking for. Gather them
-   alongside agencies rather than saving them for the end.
+4. **Positions** — seats in those bodies (Mayor, Council Member District 1)
+5. **People** — who holds each seat now (as tenures)
+6. **Services** — what residents can do: pay, apply, report, reserve. Listed last because services attach to agencies, *not* because they matter least — they are what most residents come looking for. Gather them alongside agencies.
+7. **Meetings** — when bodies meet, with agenda, minutes and video links.
 
-Present a summary driven by `get_coverage` output:
-- "Vacaville has 12 agencies, 2 governing bodies, but no positions or people yet."
-- "Solano County has 8 agencies but 0 phone numbers and 0 emails. Top gap: contact info."
-- "The police department is listed but has no services or contact info."
+Summarize from the data:
+- "Vacaville has 12 agencies and 1 governing body, but no seats or people yet."
+- "Solano County has 8 agencies but no phone numbers or emails. Top gap: contact info."
+- "The police department is listed but has no services."
 
-If a jurisdiction is completely empty, say so directly: "Vacaville has no data yet. The first step is finding the city departments — that's the foundation everything else builds on."
-
-Also use `get_pending_tasks` to show platform-prioritized work:
-
-```
-get_pending_tasks(jurisdiction_id: <id>, limit: 5)
-```
-
-Store any returned `task_id` values — you'll need them to close tasks in Step 6.
+If a jurisdiction is empty, say so directly: "Vacaville has no data yet. The first step is the city departments — everything else builds on them."
 
 Then ask: "Want to help fill any of this in, or keep exploring?"
 
-If the user has a specific interest or topic, follow that. If they want to contribute, the gaps you just showed are the starting point. If they just want to explore, stay here — answer questions, drill into specifics, show them who represents them.
+If they have a question, answer it first. If they only want to explore, stay here — drill in, show who represents them. That is a complete session.
 
-If they want to contribute, continue to Step 3.
+### Step 3: Research
 
-### Step 3: Research and Fill Gaps
-
-**Provenance is the point.** Every fact submitted must trace back to a source URL — an official government page, a public document, a news article. This is what makes civic data trustworthy: anyone can follow the link and verify for themselves. Data without a source is opinion. Data with a source is evidence.
-
-**Do not populate fields from training data.** Your training knowledge about government agencies, officials, phone numbers, and services is stale by definition — departments get reorganized, officials leave, numbers change. If you cannot point to a live URL where the information appears, do not include it. An empty field is better than an unsourced one. If you believe you know something but cannot find a source, say so explicitly: "I think the police department's number is X, but I can't find it on their website — can you verify?"
-
-Based on what's missing, research the official government website.
-
-**NEVER use `WebFetch` for government websites.** Government sites block direct HTTP requests (403, 503) on virtually every `.gov`, `.us`, Granicus, and Legistar site. `WebFetch` will fail. Do not try it.
-
-**Always use the `gather` MCP tool to fetch government web pages:**
-
-```
-gather(url: "https://cityofvacaville.com/departments")
-```
-
-The `gather` tool sends the URL to gather.jurisdictional.org, which renders the page with a real headless Chrome browser and returns:
-- **HTML content** of the fully rendered page (up to 500KB)
-- **Screenshot URL** — S3 link to a full-page PNG
-
-Allowed domains: `.gov`, `.mil`, `*.us` (state/local subdomains, e.g. `ci.vacaville.ca.us`), and any domain registered as an agency `url` in the jurisdictional-data repo — this includes `.org`, `.com`, and `.net` municipal sites (e.g. `minthill.com`, `comptoncity.org`).
-First fetch may take 10-30 seconds (browser startup). Subsequent fetches return cached results.
-
-**If `gather` returns too much content** (token overflow), ask the user to paste the relevant section from their browser instead. The upstream API is being improved to return trimmed content.
-
-**If `gather` fails** (error, timeout, or tool not available):
-
-1. **`WebSearch`** — search for `site:cityofvacaville.gov departments`. Search snippets often have what you need.
-2. **Ask the user for the page content.** Be specific about the URL and what you need. Give them two options:
-   - **Quick:** "Could you open [URL] and paste the text content from the page?"
-   - **Better:** "If you can open DevTools (right-click → Inspect), click on the main content `<div>` or `<main>` element, right-click → Copy → Copy outerHTML, and paste that here. The markup helps me parse the structure more accurately."
-   
-   Always provide the exact URL. Don't say "the departments page" — say "https://cityofvacaville.com/departments".
-   
-   This is a normal part of the workflow, not a failure. Government sites frequently block automated requests (403, 503). The user's browser has no trouble reaching them.
-
-**Follow the data hierarchy.** Work top-down — fill the layer that's missing before moving deeper:
-
-1. **Agencies first** — find the departments page on the official website. Build the full list.
-2. **Bodies next** — city council, planning commission, boards. Often on a "Government" or "Boards & Commissions" page.
-3. **Positions** — seats within each body (Mayor, Council Member District 1, etc.)
-4. **People** — who currently holds each position, with start dates if available.
-5. **Services** — see below. Not an optional last step.
-
-At each layer, look for names, types, URLs, descriptions, contact info, images, and any relationships to other entities.
-
-**Services are not the last step — they run alongside agencies.**
-
-Services are what a resident can actually *do* with their government: pay a bill, pull a permit, reserve a
-pavilion, report a pothole, adopt a pet. They are the layer people come to the dataset for. Officials change
-every election; the permit portal is what someone needs on a Tuesday afternoon.
-
-In practice services get skipped, because the hierarchy puts them last and sessions run out of attention
-before reaching them. Don't let that happen. **As you create each agency, ask: what can a resident do with
-this agency?** The same page that gave you the department name usually names its services in the next
-paragraph. Capture both in one pass rather than promising to come back.
-
-**Where services hide.** Look in these places specifically — they are where cities put the verbs:
-
-- **The "How Do I..." page** — almost every municipal site has one. It is a service catalog with a different
-  name. Check the sitemap for `/how-do-i`, `/services`, `/residents`, `/quick-links`.
-- **The quick-links bar** on the homepage — usually 6-12 items, and nearly all of them are services
-  ("Utility Bill Pay", "Report an Outage", "Job Opportunities", "Bid Postings").
-- **Third-party portal links** — an external link is a strong service signal. Watch for Tyler
-  (`tylerhost.net`, `tylerportico.com`, EnerGov), Munis (`munisselfservice.com`), Granicus, Accela,
-  CivicPlus, SeeClickFix, Smart911. A link off-site to a portal is almost always a service.
-- **Fee schedules** — any page listing dollar amounts is describing services, and gives you `cost` for free.
-  Planning/zoning fee tables are especially rich (permits, variances, rezoning, plats).
-- **Department pages** — each one typically lists 2-5 things the department does for the public.
-- **The sitemap** — `sitemap.xml` often exposes service pages that JS-driven navigation hides.
-
-**What counts as a service.** A service is something a person or business can *do, apply for, request,
-report, reserve, or pay* — it has an action and usually a URL, form, fee, or phone number.
-
-| Counts | Doesn't count |
-|---|---|
-| Pay a utility bill; apply for a building permit | The department's "About Us" page |
-| Reserve a park shelter; register for a rec program | A news post or press release |
-| Report a pothole, outage, or code violation | A staff directory |
-| Apply for a business license; request records | The city's history page |
-| Adopt a pet; get a child safety seat installed | An agenda or minutes archive |
-| Submit a bid; apply for a job | A downloadable map with no action attached |
-
-When it's genuinely ambiguous, include it — a resident searching for "adopt a pet" is better served by a
-listed service than an empty result. Ask the user if a whole category seems borderline.
-
-Set `entity_subtype` from the allowed list (health, education, housing, transportation, employment,
-public_safety, utilities, recreation, social_services) and attach each service to the agency that runs it
-via `agency_id`. Add `cost` and `eligibility` whenever a fee schedule or eligibility rule is published.
-
-**`source_url` on a new service becomes its live `online_url` — so pass the action link.** This is a real
-trap. `create_entity(entity_type: "service", source_url: X)` writes X straight into the service's
-`online_url`, applied immediately with no review. A later `propose_change` to `online_url` does *not*
-correct it quickly — that edit queues for human review like any other field change, so the wrong URL stays
-live in the meantime.
-
-So when creating a service, set `source_url` to the URL a resident should actually click — the payment
-portal, the application form, the registration page:
-
-```
-create_entity(entity_type: "service", name: "Utility Bill Pay", agency_id: 16770,
-              source_url: "https://city.munisselfservice.com/css/citizens/UtilityBilling/Default.aspx")
-              # ✅ the portal — becomes online_url, live immediately
-
-create_entity(entity_type: "service", name: "Online Permit Application", agency_id: 16769,
-              source_url: "https://www.city.gov/permitting")
-              # ❌ the department page you found it on — now the live online_url is a description, not an action
-```
-
-If the action lives on a third-party portal (Tyler, Munis, EnerGov, Granicus, Accela, SeeClickFix), that
-portal URL is the one to pass — even though it is off-domain. Note the page you sourced it from in the
-service `description` or a later `propose_change` note instead.
-
-**Verify with `get_service_details` after creating services**, and check `online_url` specifically. Do not
-rely on `get_change_status` to confirm anything — it currently returns `[]` for valid change_ids of every
-entity type, so it cannot distinguish "pending" from "dropped." Re-query the entity itself; that is the
-only trustworthy check.
-
-**Before you finish a jurisdiction, check the service count.** If you created agencies but zero services,
-you have almost certainly missed some — cities do not have departments that do nothing. Go back to the
-"How Do I" page and the quick links before reporting the session complete.
-
-**People images.** When researching officials, look for headshot/profile photo URLs on the government website.
-Set the `image` field to the direct image URL (e.g. `https://city.gov/officials/mayor-photo.jpg`).
-The platform will download and normalize the image automatically.
-Common places to find official photos: "About" pages, staff directories, press/media pages, council member profiles.
-
-**Detail levels:** Ask what depth they want:
+Ask what depth they want:
 - **Quick** — name, type, URL, description per entity
-- **Full** — contacts, officials, services, budget info
+- **Full** — contacts, officials, services, meetings
+
+Fetch government pages with the `gather` tool (sign-in required):
+
+```
+gather(url: "https://www.cityofvacaville.gov/departments")
+```
+
+It renders the page in a real browser and returns the HTML.
+Don't use `WebFetch` for government sites — they block it (403, 503).
+Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL to `gather`.
+
+**If `gather` fails or returns too much**, ask the user for the page, with the exact URL — never "the departments page":
+- **Quick:** "Could you open https://www.cityofvacaville.gov/departments and paste the text?"
+- **Better:** "Right-click the main content → Inspect → right-click the `<main>` element → Copy → Copy outerHTML, and paste it here."
+
+This is a normal part of the workflow, not a failure.
+A value from a pasted page is cited with that page's URL, and the `notes` say "pasted by the user from their browser".
+
+**Work top-down**, filling the missing layer before going deeper: agencies, then bodies, positions, people, and meetings.
+**Services run alongside agencies** — as you list each agency, ask what a resident can do with it. See [references/services.md](references/services.md).
+
+At each layer look for names, types, URLs, descriptions, contact info and relationships.
+
+- **Agencies:** set `agency_type` from what the agency does (police, parks_recreation, planning...), or leave it out when the page doesn't make it clear. Structural words like "department" are rejected. The list is in [schema.md](schema.md).
+- **Officials:** read the roster page; note start dates and term ends only when published.
+- **Photos and logos:** if a headshot, city logo or flag appears on a page you fetched, note the image URL and the page URL — they are submitted for review in Step 6.
+- **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
+- **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
 Present findings in batches. Ask for corrections before continuing.
 
 Frame contributions around what the user brings:
-- **Local knowledge**: "You probably know things about your city council that aren't online. Want to add meeting details or correct what we have?"
-- **Research skills**: "The county has 8 agencies listed but most are bare. Want to fill in the details?"
-- **Meeting transcripts**: "We don't have meeting schedules for your city council. Want to add when they meet and link to transcripts?"
-- **Their own data**: "I have a spreadsheet of every zoning decision from last year" — work with whatever they bring.
+- **Local knowledge:** "You probably know things about your council that aren't online — want to correct what we have?"
+- **Research:** "The county has 8 agencies listed but most are bare. Want to fill in the details?"
+- **Meetings:** "We don't have meeting dates for your council. Want to add them, with agenda and video links?"
+- **Their own data:** "I have a spreadsheet of every zoning decision from last year" — work with whatever they bring.
 
-Do NOT fabricate information. If you can't find something, leave it out. Note what you couldn't find so the user can fill gaps.
+If you can't find something, leave it out and note it so someone else can fill the gap.
 
-### Step 4: Review Before Submitting
+### Step 4: Review before submitting
 
-Before any submissions, show the user exactly what will be proposed. Present a summary table:
+Show exactly what will be written, one entity at a time, and wait for approval:
 
 ```
 Ready to submit for Vacaville Police Department (agency #1234):
 
-  Field       Current          Proposed                   Source
-  ─────       ───────          ────────                   ──────
-  phone       (empty)          707-449-5200               cityofvacaville.com/police
-  url         (empty)          cityofvacaville.com/police cityofvacaville.com/police
-  description (empty)          Primary law enforcement...  cityofvacaville.com/police
+  Field        Current    Proposed                      Source
+  ─────        ───────    ────────                      ──────
+  phone        (empty)    707-449-5200                  cityofvacaville.gov/police
+  website_url  (empty)    cityofvacaville.gov/police    cityofvacaville.gov/police
+  description  (empty)    Primary law enforcement...    cityofvacaville.gov/police
+  email        police@…   police@… (corroborates)       cityofvacaville.gov/contact
 
-Submit these 3 changes? (y/n)
+Submit these 4? (y/n)
 ```
 
-For people, include `image` when a photo URL is available:
+Say which kind of write each row is, because they behave differently:
+- **New entity** (`create_entity`, `import_jurisdiction`): live immediately, with no review. Be most careful here.
+- **Change to an existing field** (`propose_change`): queued for human review.
+- **Same value from a new source**: recorded as corroboration, no review.
+
+**Every row has a source URL.**
+A value from the user's own knowledge is marked "user-provided" — confirm they're comfortable with that attribution.
+A value from your training knowledge has no place in the table: remove it and list it as unverified.
+
+### Step 5: Submit
+
+Read [references/tools.md](references/tools.md) for the fields and side effects of each tool before the first write.
+
+**Always search before creating**, so you don't add a duplicate:
 
 ```
-Ready to submit for Ron Rowlett (person #400):
-
-  Field       Current          Proposed                          Source
-  ─────       ───────          ────────                          ──────
-  email       (empty)          mayor@cityofvacaville.com         cityofvacaville.com/mayor
-  image       (empty)          cityofvacaville.com/.../photo.jpg cityofvacaville.com/mayor
-
-Submit these 2 changes? (y/n)
+search_agencies(query: "Parks and Recreation", jurisdiction_ids: [<place_id>])
+→ found: use its id → propose_change
+→ not found: create_entity
 ```
 
-Always show what's changing, what the source is, and let the user approve before calling the API. One entity at a time — don't batch multiple entities into a single approval.
+The same goes for `search_bodies`, `search_services`, `search_positions` (by `body_id`) and `search_people` (then `get_person_details` to see their seats).
 
-**Every row must have a source URL.** If a proposed change has no source — because the information came from the user's local knowledge rather than a fetchable URL — mark the source as "user-provided" and confirm the user is comfortable with that attribution. Never submit a change sourced from training data. If a value came from your training knowledge rather than a live source or the user, remove it from the table and note it as unverified.
+**Choose the write:**
 
-### Step 5: Authenticate (if not already signed in)
+| Situation | Tool |
+|---|---|
+| An empty or thin jurisdiction, many entities at once | `import_jurisdiction` — always `dry_run: true` first; show the result; then run it for real |
+| One new entity | `create_entity` |
+| A missing or wrong field on an existing entity | `propose_change`, once per field |
+| A value already there, confirmed by another page | `propose_change` with the same value and the new `source_url` |
+| Seating a person | `create_entity(entity_type: "person", position_id, source_url, start_date?, term_ends_on?)` |
+| A whole roster changed (admin) | `reconcile_roster` — dry run first, show the plan, then apply |
+| Someone left a seat (admin) | `end_tenure` with the page that shows it; otherwise note it for an admin |
+| A meeting or agenda item | `create_entity(entity_type: "meeting", body_id, start_time, agenda_url, minutes_url, video_url)` |
+| A headshot, logo or flag | `submit_portrait_candidate` / `submit_jurisdiction_image_candidate` (private review queue) |
 
-If the user signed in at Step 0, skip this. Otherwise, check for a token now:
-
-```bash
-echo ${JURISDICTIONAL_TOKEN} 2>/dev/null; cat ~/.jurisdictional/token 2>/dev/null
-```
-
-If no token, say: "To submit these, you'll need to sign in." Then run `open https://jurisdictional.org/auth/cli` and ask for the token.
-
-### Step 6: Submit and Verify
-
-For each approved entity, call `propose_change` once per field:
-
-```
-propose_change(
-  entity_type: "agency",
-  entity_id: 1234,
-  field_name: "phone",
-  new_value: "707-449-5200",
-  source_url: "https://www.cityofvacaville.com/police",
-  notes: "Listed on department contact page"
-)
-```
-
-**After each entity, verify the change landed by re-querying the API:**
+**Create top-down.** Each `create_entity` returns an id you need for the next layer:
 
 ```
-get_agency_details(id: 1234)
+create_entity(entity_type: "body", name: "City Council", jurisdiction_id: 70118,
+              entity_subtype: "council", source_url: "<council page>")              → body_id 200
+create_entity(entity_type: "position", name: "Mayor", jurisdiction_id: 70118,
+              body_id: 200, source_url: "<roster>")                                 → position_id 300
+create_entity(entity_type: "person", first_name: "Ron", last_name: "Rowlett",
+              jurisdiction_id: 70118, position_id: 300, source_url: "<roster>")     → person 400, tenure created
 ```
 
-Show a before/after comparison and the verification links:
+```
+Jurisdiction (exists, from the juricode)
+  ├── Body — council or board, belongs to the jurisdiction (agency optional)
+  │     ├── Position → Tenure → Person
+  │     └── Meeting → Agenda item
+  └── Agency (agency_type = its function)
+        ├── Service (online_url = the action link)
+        ├── Body — a board inside a department
+        └── Position (an agency role, without a body)
+```
+
+**`source_url` becomes a live field on new entities** — the agency's `website_url`, the service's `online_url`.
+Pass the agency's own page and the service's action link, not the list page where you found them.
+
+**Two modes.** The user can approve each entity, or say "fill in everything you can find" — then research and submit fully, and show every `change_id` and URL in the summary at the end.
+Even then, run `import_jurisdiction` and `reconcile_roster` as dry runs first, and show the result before writing.
+
+### Step 6: Verify and close the loop
+
+**After each entity, re-query it** (`get_agency_details`, `get_service_details`, `get_body_details`, `get_person_details`).
+Detail responses list each field's sources and corroboration count, so the re-query shows whether your claim landed.
+Check `online_url` on services and `website_url` on agencies specifically.
+Use `get_change_status(change_ids: [...])` to see whether a proposal is pending, approved, published or rejected.
 
 ```
 ✓ Vacaville Police Department — 3 changes submitted
 
-  phone:       (was empty) → 707-449-5200 ✓
-  url:         (was empty) → cityofvacaville.com/police ✓
-  description: (was empty) → Primary law enforcement... ✓
+  phone:        (was empty) → 707-449-5200  pending review
+  website_url:  (was empty) → cityofvacaville.gov/police  pending review
+  email:        police@…  corroborated (2 sources)
 
-  See this entity:      https://jurisdictional.org/agencies/1234
-  See your changes:     https://jurisdictional.org/users/contributions
-  See the jurisdiction: https://jurisdictional.org/jurisdictions/70118
+  This entity:    https://jurisdictional.org/agencies/1234
+  Your changes:   https://jurisdictional.org/users/contributions
+  Jurisdiction:   https://jurisdictional.org/jurisdictions/70118
 ```
 
-The re-query proves the data landed. The links let the user verify on the site.
+**Submit images** you noted in Step 3 with `submit_portrait_candidate` or `submit_jurisdiction_image_candidate`; they appear publicly only after review.
 
-**Close any open sourcing tasks.** If `get_pending_tasks` returned tasks in Step 2, close them now:
+**Close the sourcing tasks** from Step 2 with `submit_sourcing_result` — `status: "success"`, `"partial"` or `"failed"` with a `failure_reason`.
+If you already submitted the values, pass `data: {}` so they aren't proposed twice.
 
-```
-submit_sourcing_result(
-  task_id: <task_id>,
-  status: "completed",
-  data: { entity_ids: [12847, 12848] },
-  evidence: ["https://cityofvacaville.gov/departments"]
-)
-```
+**Re-check coverage** with `get_coverage` and compare it with Step 2.
 
-If you only gathered partial data, use `status: "partial"` instead of `"completed"`.
+- **Zero services with agencies is a red flag, not a finished session.** Say so: "18 agencies but 0 services — I haven't captured what residents can actually do yet. Want me to work the 'How Do I' page and quick links?" Don't move on with a silent zero.
+- **Report what you did NOT find, and why** — no published roster, no term dates, a page that blocked the fetcher. Gaps named are gaps someone else can fill; gaps hidden look like completeness. An admin can record a blocked site with `record_coverage_gap`.
+- **Duplicates and departures** you couldn't fix (non-admin): list them for an admin.
 
-**After all submissions, show a session summary:**
+**Session summary:**
 
 ```
-Session complete — 12 changes submitted across 4 entities:
+Session complete — 12 writes across 4 entities:
 
-  Entity                          Changes  Status
-  ──────                          ───────  ──────
-  Vacaville Police Department     3        pending review
-  Vacaville Fire Department       4        pending review
-  Parks & Recreation              3        pending review
-  City Council                    2        pending review
+  Entity                        Writes  Status
+  ──────                        ──────  ──────
+  Vacaville Police Department   3       2 pending review, 1 corroborated
+  Parks & Recreation (new)      4       live
+  City Council                  2       pending review
+  Utility Bill Pay (new)        3       live
 
+  Not found: council term end dates (not published); fire dept. email.
   Your contributions: https://jurisdictional.org/users/contributions
-  Vacaville overview:  https://jurisdictional.org/jurisdictions/70118
 ```
 
-**Re-check coverage before declaring done.** Call `get_coverage` again and compare it to the before state.
-Two things to look at specifically:
-
-- **Zero services with non-zero agencies is a red flag, not a finished session.** Say so plainly rather than
-  reporting success: "18 agencies but 0 services — I haven't captured what residents can actually do yet.
-  Want me to work the 'How Do I' page and quick links before moving on?" Do not move to the next
-  jurisdiction on a silent zero.
-- **Report what you did NOT find**, and why — no published roster, no term dates, a page that blocked. Gaps
-  named are gaps someone else can fill. Gaps hidden look like completeness.
-
-**Offer the next target.** After a successful session, call `get_next_uncovered` to suggest where to go next:
+**Offer the next target:**
 
 ```
 get_next_uncovered(state: "CA", level: "place", limit: 1)
-→ "Done with Vacaville. Next uncovered city in CA: Woodland (no agencies yet). Start there?"
+→ "Next uncovered city in CA: Woodland (no agencies yet). Start there?"
 ```
 
-**How to get entity IDs:**
-- For existing entities: `search_agencies`, `get_agency_details`, etc. return `id` in the response
-- For new entities: **always search before creating** to avoid duplicates:
+`coverage: "agencies"` finds places with departments but no council, and `"governed"` finds places with no services — good targets for a shorter session.
 
-```
-search_agencies(query: "Parks and Recreation", jurisdiction_ids: [<place_id>])
-→ if found: use existing entity_id → propose_change
-→ if not found: create_entity → then propose_change
-```
-
-Same pattern for bodies, people, and services:
-
-```
-search_bodies(query: "Planning Commission", jurisdiction_ids: [<place_id>])
-→ if found: use existing body_id → propose_change
-→ if not found: create_entity
-
-search_services(query: "Park Reservations", jurisdiction_ids: [<place_id>])
-→ if found: use existing service_id → propose_change
-→ if not found: create_entity
-
-search_people(query: "Ron Rowlett")
-→ if found: get_person_details(id) to check existing seats → propose_change
-→ if not found: create_entity
-```
-
-- For new entities (after confirming no duplicate): use `create_entity` first, then `propose_change` to fill in fields:
-
-```
-create_entity(
-  entity_type: "agency",
-  name: "Parks & Recreation Department",
-  jurisdiction_id: 70118,
-  entity_subtype: "executive",
-  source_url: "https://cityofvacaville.gov/parks"
-)
-← returns entity_id: 12847
-
-propose_change(entity_type: "agency", entity_id: 12847, field_name: "phone", ...)
-propose_change(entity_type: "agency", entity_id: 12847, field_name: "address", ...)
-```
-
-**Entity Relationship Diagram — follow this for creation order:**
-
-```
-Jurisdiction (already exists via juricode)
-  └── Agency (belongs_to jurisdiction)
-        ├── Service (belongs_to agency)
-        ├── Body (belongs_to agency + jurisdiction)
-        │     └── Position (belongs_to body + agency)
-        │           └── Person → Tenure (links person to position)
-        └── Position (can belong_to agency directly, without a body)
-```
-
-**Required foreign keys per entity type:**
-
-| Creating a... | Required FKs | Example |
-|---|---|---|
-| agency | `jurisdiction_id` | Parks & Rec under Vacaville |
-| body | `jurisdiction_id` + `agency_id` | City Council under City Manager's Office |
-| service | `agency_id` | "Park Reservations" under Parks & Rec |
-| position | `body_id` (or `agency_id`) | "Council Member Seat 1" under City Council |
-| person | `position_id` (creates tenure) | "Ron Rowlett" holding Mayor position |
-
-Note: `jurisdiction_id` is always required in the tool schema but only meaningful for agency and body. Position inherits its jurisdiction through its body/agency.
-
-**Create top-down.** Each `create_entity` returns an `entity_id` you need for the next layer:
-
-```
-create_entity(type: "agency", name: "City Manager", jurisdiction_id: 70118)
-  → agency_id: 100
-
-create_entity(type: "body", name: "City Council", jurisdiction_id: 70118, agency_id: 100)
-  → body_id: 200
-
-create_entity(type: "position", name: "Mayor", jurisdiction_id: 70118, body_id: 200)
-  → position_id: 300
-
-create_entity(type: "person", name: "Ron Rowlett", jurisdiction_id: 70118, position_id: 300)
-  → person_id: 400 (tenure auto-created linking person 400 to position 300)
-```
-
-Available `entity_subtype` values:
-- **agency**: executive, legislative, judicial, independent, educational, public_safety
-- **body**: council, commission, board, committee
-- **service**: health, education, housing, transportation, employment, public_safety, utilities, recreation, social_services
-
-**Cleaning up mistakes (admin only).** If you created a duplicate or wrong entity, use the admin tools:
-
-```
-delete_entity(entity_type: "person", entity_id: 401, reason: "duplicate of #400")
-```
-
-```
-merge_entities(
-  entity_type: "person",
-  keep_id: 400,
-  merge_id: 401,
-  reason: "same person imported twice from different sources"
-)
-```
-
-`merge_entities` is preferred over `delete_entity` when the duplicate has data worth keeping — it reassigns foreign keys (tenures, positions, bodies, services) to the primary entity before deleting the duplicate.
-
-Both tools require admin access. Non-admin users should note duplicates for later cleanup.
-
-**Local files are optional.** If the user wants a local record, write JSON files per the schema. But the submission is the `propose_change` call — not the file.
-
-**Tracking contributions.** The contributions page at jurisdictional.org updates in real time — the user can have it open in a browser and watch changes appear as they're submitted from this session. Each `propose_change` response also includes a direct URL to that specific change.
-
-> **`get_change_status` is currently unreliable — do not use it as evidence.** As of 2026-07, it returns an
-> empty array `[]` for valid `change_id` values across every entity type, including changes that are
-> confirmably pending. An empty result does **not** mean the change was dropped. Verify by re-querying the
-> entity itself (`get_agency_details`, `get_service_details`, `get_person_details`) and by comparing
-> `get_coverage` before/after — the `*_pending_*` counters there do reflect queued changes. Never tell the
-> user a change failed on the basis of a `get_change_status` result alone.
-
-**Two modes.** The user can work through each entity conversationally (review before submit) or say "fill in everything you can find" — in which case research and submit maximally, showing the full session summary at the end with all `change_id`s and URLs.
+**Local files are optional.** If the user wants a local record, write JSON per [schema.md](schema.md). The submission is the API call, not the file.
 
 ## Guidelines
 
-- **Provenance over completeness.** The value of this dataset is that every fact is traceable. A record with a source URL can be trusted, challenged, and updated. A record without one is a guess. Prioritize sourced data — even if it means submitting fewer fields.
-- **NEVER use training data as a source.** Do not fill in agency names, phone numbers, officials, services, or any civic data from your training knowledge. All facts must come from a live source: the Jurisdictional API, a fetched web page, or the user. If you want to use training knowledge to *guide research* (e.g., "I believe this city has a Parks department — let me search for it"), that's fine, but the submitted value must come from the source you find, not from memory. If you can't verify it from a live source, don't include it.
-- **Start with their question, not your agenda.** If they want to know who their school board members are, answer that first. Don't lead with "what do you want to contribute?"
+- **Provenance over completeness.** A record with a source URL can be trusted, challenged and updated; one without is a guess. Submit fewer fields rather than unsourced ones.
+- **Start with their question, not your agenda.** If they want their school board, answer that first.
 - **Show, then ask.** Present what exists before asking what's missing.
-- **Gaps are opportunities, not failures.** Frame missing data positively: "No one has added this yet — you could be the first."
-- **Don't overwhelm.** A person interested in water rates doesn't need to see every agency in the county.
-- **Respect the scope.** If they want to explore without contributing, that's a complete experience.
-- **Be specific about impact.** "Adding this meeting schedule means anyone in Vacaville can find when their council meets" is better than "this data is useful."
-- **Services are the payoff layer.** Agencies and officials are scaffolding; services are what a resident
-  searches for. A jurisdiction with 18 agencies and 0 services is not covered — it's an org chart. Capture
-  services as you go, and never report a session complete on a silent zero.
-- **Don't guess.** Missing data is better than wrong data. An empty field is honest. A field filled from training data is a liability — it looks authoritative but can't be verified.
-- **Source hierarchy.** Government `.gov` websites (via `gather` tool) are the gold standard. Then other official municipal sites. Then Wikipedia or news articles. Then user-provided local knowledge (attributed as "user-provided"). Training data is never a valid source — not even as a fallback.
-- **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them.
-- **Be incremental.** Five verified agencies are more valuable than thirty unverified ones.
+- **Gaps are opportunities, not failures.** "No one has added this yet — you could be the first."
+- **Don't overwhelm.** Someone interested in water rates doesn't need every agency in the county.
+- **Respect the scope.** Exploring without contributing is a complete experience.
+- **Be specific about impact.** "Adding this meeting schedule means anyone in Vacaville can find when their council meets" beats "this data is useful."
+- **Services are the payoff layer.** Agencies and officials are scaffolding; a jurisdiction with 18 agencies and 0 services is an org chart, not coverage.
+- **New entities go live; edits get reviewed.** Take the most care with `create_entity` and `import_jurisdiction`.
+- **Source hierarchy.** The government's own site (via `gather`) first; then other official sites (a state municipal league, the county); then news; then the user's local knowledge, attributed as "user-provided". Search snippets and training data are never sources.
+- **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them, and ask where it's published.
+- **Be incremental.** Five verified agencies are worth more than thirty unverified ones.
