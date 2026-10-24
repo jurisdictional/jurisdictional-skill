@@ -27,6 +27,7 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 - `get_body_details(id, as_of?)` → the body's seats and current holders, with tenure ids.
   Check it before gathering a roster from a website.
 - `get_*_details` return each field's sources and a corroboration count.
+- Duplicate agencies are being merged: an agency id from an earlier session may stop resolving. Search by name again rather than reusing it.
 
 ## Fetching pages: `gather(url)`
 
@@ -61,7 +62,7 @@ Every field set on the new row is recorded as a claim citing `source_url`, and i
 
 | entity_type | Needs | Notes |
 |---|---|---|
-| agency | `jurisdiction_id` | `entity_subtype` = agency_type (function only, or omit). `website_url` = the agency's own page, not the list of departments you found it on; omit it if the agency has none. |
+| agency | `jurisdiction_id` | `entity_subtype` = agency_type (function only, or omit). `website_url` = the agency's own page, not the list of departments you found it on; omit it if the agency has none. The government itself is the jurisdiction: never create a "City of …" agency for it. |
 | body | `jurisdiction_id` | Omit `agency_id` for a council or board: it belongs to the jurisdiction. `entity_subtype` = legislative_type (council, commission, board). `source_url` becomes the body's `source`. |
 | service | `jurisdiction_id`, `agency_id` | `online_url` = the action link (portal, form), not the page describing it — see [services.md](services.md). `cost`, `eligibility`. |
 | position | `jurisdiction_id`, `body_id` (or `agency_id`) | A position with the same label under the same body is returned, not duplicated. |
