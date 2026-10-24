@@ -115,7 +115,7 @@ If you also want local files, the skill can write one JSON file per entity:
     "contributor": "your-github-username"
   },
   "name": "Vacaville Police Department",
-  "agency_type": "department",
+  "agency_type": "police",
   "jurisdiction": "vacaville-ca",
   "url": "https://www.cityofvacaville.com/departments/police",
   "phone": "707-449-5200"

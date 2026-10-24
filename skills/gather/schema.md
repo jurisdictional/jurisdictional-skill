@@ -40,7 +40,7 @@ Files are validated against JSON Schemas in `schemas/` of the data repo.
     "contributor": "your-github-username"
   },
   "name": "Austin Police Department",
-  "agency_type": "department",
+  "agency_type": "police",
   "jurisdiction": "austin-tx",
   "url": "https://www.austintexas.gov/police",
   "description": "Primary law enforcement agency for the City of Austin",
@@ -51,6 +51,14 @@ Files are validated against JSON Schemas in `schemas/` of the data repo.
   "zip": "78701"
 }
 ```
+
+`agency_type` is what the agency *does*, not what kind of unit it is.
+Use one of these values, or omit the field when the page doesn't make the function clear:
+
+administration, animal_services, assessment, clerk, courts, economic_development, education, elections, emergency_management, environment, finance, fire, health, housing, human_resources, human_services, information_technology, legal, legislative, library, parks_recreation, planning, police, public_works, transportation, utilities, workforce.
+
+Structural words (`department`, `office`, `bureau`, `board`, `commission`, `authority`, `division`, `other`), branches (`executive`, `independent`) and levels (`municipal`, `county`, `state`, `federal`) are rejected by the API.
+The source of truth is the `agency_type` enum on the `search_agencies` MCP tool.
 
 ### Service File
 

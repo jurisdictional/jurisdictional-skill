@@ -5,7 +5,7 @@
     "contributor": "example-user"
   },
   "name": "Austin Fire Department",
-  "agency_type": "department",
+  "agency_type": "fire",
   "jurisdiction": "austin-tx",
   "url": "https://www.austintexas.gov/department/fire",
   "description": "Fire suppression, emergency medical services, and fire prevention",
