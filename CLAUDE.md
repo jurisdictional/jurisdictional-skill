@@ -15,7 +15,7 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 - `.claude-plugin/plugin.json` — plugin manifest (bump `version` on every release)
 - `.claude-plugin/marketplace.json` — single-plugin marketplace: `/plugin marketplace add jurisdictional/jurisdictional-skill`
 - `.mcp.json` — the MCP server, with `headersHelper` → `bin/jurisdictional-headers.sh`
-- `bin/jurisdictional-headers.sh` — sends `Authorization: Bearer <~/.jurisdictional/token>` when the file exists, `{}` otherwise
+- `bin/jurisdictional-headers.sh` — sends `Authorization: Bearer <~/.jurisdictional/token>` when the file holds a `jur_...` key, `{}` otherwise
 - `skills/gather/SKILL.md` — the flow: preflight → location → what exists → research → review → submit → verify
 - `skills/gather/references/tools.md` — what each MCP tool does to live data, and who can call it
 - `skills/gather/references/services.md` — gathering services
@@ -26,7 +26,7 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 
 - **Juricode**: given an address, every jurisdiction (federal → local) that governs that location.
 - **Access tiers**: no token → 19 public read tools. Signed in → `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, image candidates. Admin → `reconcile_roster`, `end_tenure`, `merge_entities`, `delete_entity`, coverage reports.
-- **Auth**: an empty or invalid bearer gets HTTP 401 for the whole connection, so the helper must send no header when there's no token. Plugin helpers don't see `TOKEN`-like env vars, so the token lives in `~/.jurisdictional/token` (from `/auth/cli`).
+- **Auth**: an empty or invalid bearer gets HTTP 401 for the whole connection, so the helper sends no header unless the file holds a `jur_...` key. Plugin helpers don't see `TOKEN`-like env vars, so the token lives in `~/.jurisdictional/token` (from `/auth/cli`).
 - **Writes**: `create_entity` and `import_jurisdiction` apply live; `propose_change` queues for review, or corroborates when the value is unchanged.
 - **Provenance**: values come only from pages fetched with `gather`, or from the user. Never search snippets or training data.
 

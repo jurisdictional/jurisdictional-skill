@@ -63,15 +63,17 @@ Check your tool list.
 **Signing in.** Researching pages (`gather`) and every write need sign-in.
 Never print, echo or `cat` the token, and don't ask the user to paste it into the chat.
 
-1. Run `open https://jurisdictional.org/auth/cli`. The user signs in with GitHub and copies the token shown.
-2. Ask them to run this themselves, so the token goes from the clipboard to a file without entering the conversation:
+1. Give them this command and ask them to paste it at the prompt **without pressing Enter yet**: copying the command uses the clipboard, so it must come before the token.
+   It runs on their machine, so the token goes from the clipboard to a file without entering the conversation, and it saves only a `jur_...` key:
 
    ```
-   ! mkdir -p ~/.jurisdictional && pbpaste > ~/.jurisdictional/token && chmod 600 ~/.jurisdictional/token
+   ! mkdir -p ~/.jurisdictional && t=$(pbpaste | tr -d '[:space:]'); case "$t" in jur_*[!A-Za-z0-9_-]*) t= ;; jur_*) (umask 077; printf '%s\n' "$t" > ~/.jurisdictional/token) && chmod 600 ~/.jurisdictional/token && echo "Token saved." ;; *) t= ;; esac; [ -n "$t" ] || echo "Not saved: the clipboard holds no jurisdictional.org token (jur_...). Copy it from jurisdictional.org/auth/cli, then run this again."
    ```
 
    On Linux, `xclip -o -selection clipboard` replaces `pbpaste`.
-3. Ask them to run `/mcp` and reconnect `jurisdictional` (or start a new session), then check that `propose_change` now appears.
+2. Run `open https://jurisdictional.org/auth/cli`. They sign in with GitHub, copy the token shown, and press Enter on the command.
+   "Not saved" means the clipboard held something else: copy the token again and rerun it (up-arrow).
+3. On "Token saved.", ask them to run `/mcp` and reconnect `jurisdictional` (or start a new session), then check that `propose_change` now appears.
 
 The plugin reads `~/.jurisdictional/token` each time it connects.
 If the user added the server by hand with an `Authorization` header, that header is what counts: they update it there instead.

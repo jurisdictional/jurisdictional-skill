@@ -60,17 +60,18 @@ flowchart TD
 **Exploring works without an account.**
 Researching pages and contributing need a jurisdictional.org token:
 
-1. Open [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli), sign in with GitHub, and copy the token.
-2. Save it where the plugin reads it, without pasting it into the chat:
+1. Paste this command at the Claude Code prompt, but **don't press Enter yet** (copying it replaces your clipboard, so it comes first).
+   It saves the token from your clipboard to `~/.jurisdictional/token`, without the token entering the chat, and only if the clipboard holds a `jur_...` key:
 
    ```
-   ! mkdir -p ~/.jurisdictional && pbpaste > ~/.jurisdictional/token && chmod 600 ~/.jurisdictional/token
+   ! mkdir -p ~/.jurisdictional && t=$(pbpaste | tr -d '[:space:]'); case "$t" in jur_*[!A-Za-z0-9_-]*) t= ;; jur_*) (umask 077; printf '%s\n' "$t" > ~/.jurisdictional/token) && chmod 600 ~/.jurisdictional/token && echo "Token saved." ;; *) t= ;; esac; [ -n "$t" ] || echo "Not saved: the clipboard holds no jurisdictional.org token (jur_...). Copy it from jurisdictional.org/auth/cli, then run this again."
    ```
 
    (On Linux, use `xclip -o -selection clipboard` in place of `pbpaste`.)
-3. Run `/mcp` and reconnect `jurisdictional`, or start a new session.
+2. Open [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli), sign in with GitHub, copy the token, and press Enter on the command.
+3. On "Token saved.", run `/mcp` and reconnect `jurisdictional`, or start a new session.
 
-The plugin sends the token only when that file exists; without it, you get the public read-only tools.
+The plugin sends the token only when that file holds a `jur_...` key; otherwise you get the public read-only tools.
 If you added the server by hand with an `Authorization` header, update that header instead.
 
 ## What you can contribute

@@ -56,7 +56,9 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a contributor, I sign in without my token appearing in the conversation.*
 
-- The skill opens `/auth/cli` and gives the `pbpaste > ~/.jurisdictional/token` command; it never runs `cat` or `echo` on the token.
+- The skill gives the save command first (paste, don't run), then opens `/auth/cli`; it never runs `cat` or `echo` on the token.
+- Pressing Enter with the command itself still on the clipboard prints "Not saved…" and leaves any existing token file alone.
+- A token file holding anything but a `jur_...` key still connects, anonymously (the helper sends no header).
 - After `/mcp` reconnects, `propose_change` is in the tool list and the skill says so.
 
 ### T5 — Every value comes from a fetched page (eval E8)
