@@ -33,7 +33,7 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 ## When Modifying the Skill
 
 - Invoked via `/gather [address or city, state]`; arguments arrive as `$ARGUMENTS`. `disable-model-invocation: true` keeps it user-invoked.
-- Keep the pause points and the Step 4 review table.
+- Keep the three stops (after Step 2, each Step 4 review, the next target) and the Step 4 review table; no other pauses.
 - Keep SKILL.md under 500 lines; put detail in `references/` (one level deep).
 - Check enums against the live schemas: `curl -s -X POST https://jurisdictional.org/api/mcp/message -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`.
 - Validate: `claude plugin validate .`, and ajv against `jurisdictional-data/schemas/` for the examples (see the commit that fixed them).

@@ -37,7 +37,10 @@ Data without a source is opinion. Data with a source is evidence.
 
 ## Flow
 
-Work through these steps conversationally. **Pause after each step** for user input. Do not rush ahead.
+Work through these steps conversationally, and stop only where the user decides:
+after Step 2 (what to work on), at each Step 4 review, and at the next target.
+Between those, keep going — don't ask permission to read.
+At those three stops, offer the choices with `AskUserQuestion` (2-4 options, the recommended one first), so the user can answer with one keystroke; they can always type something else.
 
 ### Preflight: connection and sign-in
 
@@ -55,12 +58,14 @@ Check your tool list.
    > Or add just the server: `claude mcp add --transport http jurisdictional https://jurisdictional.org/api/mcp/message`.
    > Then start a new session.
 
-2. **`set_location` but no `propose_change`**: connected, not signed in. Exploring works. Say so, and offer sign-in now or later.
+2. **`set_location` but no `propose_change`**: connected, not signed in. Exploring works; carry on, and note "not signed in" in one line under Step 2's table. Offer sign-in only when the user first chooses to contribute.
 
-3. **`propose_change` present**: signed in. Say "Signed in to jurisdictional.org — you can explore and contribute."
+3. **`propose_change` present**: signed in; say nothing about it unless asked.
    If `reconcile_roster` is also present, the user is an admin; the admin paths in [tools.md](references/tools.md) are open.
 
-**Signing in.** Researching pages (`gather`) and every write need sign-in.
+Don't open with a status report: the user's first answer is Step 2's table.
+
+**Signing in** (when the user first wants to contribute). Researching pages (`gather`) and every write need sign-in.
 Never print, echo or `cat` the token, and don't ask the user to paste it into the chat.
 
 1. Give them this command and ask them to paste it at the prompt **without pressing Enter yet**: copying the command uses the clipboard, so it must come before the token.
@@ -88,8 +93,9 @@ If the user provided arguments, use them: `$ARGUMENTS`
 1. Call `set_location` with their address or city.
    If it finds nothing, fall back to `search_jurisdictions(query: "Vacaville", level: "municipal")`, pick the best match, and confirm it with the user.
    If the address looks wrong ("Ave" where the street is "St"), say so and suggest the fix rather than returning nothing.
-2. Present the **juricode** — the stack of governments that serve the location: federal, state, congressional district, state legislative districts, county, city, school district, special districts.
-   County subdivisions marked `kind: "non_governing"` are statistical areas, not governments: leave them out, or label them as such.
+2. The **juricode** is the stack of governments that serve the location: federal, state, congressional and state legislative districts, county and county district, city, school district.
+   County subdivisions marked `kind: "non_governing"` are statistical areas, not governments: leave them out.
+   Don't stop to present it; Step 2's table is the presentation.
 3. Keep the `jurisdiction_ids`; they scope every later query.
 
 ### Step 2: Show what exists, layer by layer
@@ -137,13 +143,13 @@ Your governments at 300 Hemlock St, Vacaville
 Show them, but don't offer to gather for them; if the user asks who represents them, find the seat on the body (`get_body_details` for the Board of Supervisors).
 
 Then recommend one gap, the lowest rung first, and say what it would change: "California has no services at all — adding the DMV and state tax services would take it from governed to served."
+Ask with `AskUserQuestion`: the recommended gap, one or two others from the table, and "Just exploring".
 If they asked a question, answer it first. If they only want to explore, stay here — drill in with `explore(focus: "agencies" | "bodies" | "people" | "services", jurisdiction_ids: [...])` and `get_body_details`. That is a complete session.
 
 ### Step 3: Research
 
-Ask what depth they want:
-- **Quick** — name, type, URL, description per entity
-- **Full** — contacts, officials, services, meetings
+**What to research follows the rung** from Step 2: departments and their services at `none`, the council and its seats at `agencies`, services at `governed`, contacts past Gold.
+Don't ask how deep to go; gather what moves that rung, then offer the next one.
 
 Fetch government pages with the `gather` tool (sign-in required):
 
@@ -173,7 +179,7 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
 - **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
-Present findings in batches. Ask for corrections before continuing.
+Present findings one layer at a time (all the agencies, then their services), and ask for corrections before continuing.
 
 Frame contributions around what the user brings:
 - **Local knowledge:** "You probably know things about your council that aren't online — want to correct what we have?"
@@ -185,7 +191,9 @@ If you can't find something, leave it out and note it so someone else can fill t
 
 ### Step 4: Review before submitting
 
-Show exactly what will be written, one entity at a time, and wait for approval:
+Show exactly what will be written, and wait for approval.
+Review **a layer at a time**: one table for all the new agencies, one for their services. For `import_jurisdiction`, the dry run's result is the table.
+For changes to an existing entity, one table per entity:
 
 ```
 Ready to submit for Vacaville Police Department (agency #1234):
@@ -197,8 +205,9 @@ Ready to submit for Vacaville Police Department (agency #1234):
   description  (empty)    Primary law enforcement...    cityofvacaville.gov/police
   email        police@…   police@… (corroborates)       cityofvacaville.gov/contact
 
-Submit these 4? (y/n)
 ```
+
+Ask with `AskUserQuestion`: "Submit all 4", "Let me change some", "Skip this one".
 
 Say which kind of write each row is, because they behave differently:
 - **New entity** (`create_entity`, `import_jurisdiction`): live immediately, with no review. Be most careful here.
