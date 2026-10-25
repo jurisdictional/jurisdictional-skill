@@ -21,6 +21,8 @@ Start a new session, then:
 /gather 300 Hemlock St, Vacaville, CA
 ```
 
+Already contributing? `/gather next CA` skips the address and picks the most useful place in California to work on next.
+
 The plugin connects Claude to the Jurisdictional MCP server at `https://jurisdictional.org/api/mcp/message`.
 To use the server without the skill: `claude mcp add --transport http jurisdictional https://jurisdictional.org/api/mcp/message`.
 

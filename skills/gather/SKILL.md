@@ -4,7 +4,7 @@ description: Explore the governments that serve an address on jurisdictional.org
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: WebSearch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
-argument-hint: [address or city, state]
+argument-hint: [address | city, state | next [state]]
 ---
 
 # Gather — Civic Data
@@ -81,6 +81,9 @@ If the user added the server by hand with an `Authorization` header, that header
 ### Step 1: Where are you?
 
 If the user provided arguments, use them: `$ARGUMENTS`
+
+- **`next`** (`/gather next`, `/gather next CA`): skip the address. Pick a target as in [Choosing a next target](#choosing-a-next-target) (in the given state, or ask which), then go to Step 2 for it.
+- **No arguments:** ask for an address or a city and state.
 
 1. Call `set_location` with their address or city.
    If it finds nothing, fall back to `search_jurisdictions(query: "Vacaville", level: "municipal")`, pick the best match, and confirm it with the user.
@@ -308,14 +311,18 @@ Session complete — 12 writes across 4 entities:
   Your contributions: https://jurisdictional.org/users/contributions
 ```
 
-**Offer the next target:**
+**Offer the next target**, nearest to the user first (see [Choosing a next target](#choosing-a-next-target)).
+If they pick one, continue at Step 2 for it — no new preflight or location.
 
-```
-get_next_uncovered(state: "CA", level: "place", limit: 1)
-→ "Next uncovered city in CA: Woodland (no agencies yet). Start there?"
-```
+### Choosing a next target
 
-`coverage: "agencies"` finds places with departments but no council, and `"governed"` finds places with no services — good targets for a shorter session.
+In this order:
+
+1. **Another government at this address** below `served` or below Gold, from Step 2's table. The user lives there, so the gap is theirs.
+2. **The biggest places in the state that are partly covered:** `get_next_uncovered(state: "CA", level: "place", coverage: "governed", limit: 5)` (no services yet), then `coverage: "agencies"` (no council). Prefer the largest population: Los Angeles with no services matters more than a village with none.
+3. **Places with nothing yet:** `coverage: "none"`. This also returns census-designated places, which have no government — check each with `get_jurisdiction_details` and skip any without an `ocd_id`.
+
+Offer two or three with `AskUserQuestion`, each with its rung and population ("San Diego — governed, 1.4M people, 0 services"), plus "Stop here".
 
 **Local files are optional.** If the user wants a local record, write JSON per [schema.md](schema.md). The submission is the API call, not the file.
 
