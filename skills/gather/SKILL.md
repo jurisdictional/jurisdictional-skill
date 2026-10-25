@@ -22,7 +22,7 @@ The user has local knowledge you don't — defer to them on what's accurate.
 ## References
 
 - [references/tools.md](references/tools.md) — every MCP tool used here: who can call it, its fields, and what it does to live data. Read it before your first write.
-- [references/services.md](references/services.md) — where services hide on city websites, what counts, and and `online_url` vs `source_url`.
+- [references/services.md](references/services.md) — where services hide on city websites, what counts, and `online_url` vs `source_url`.
 - [schema.md](schema.md) — the local-file format and the allowed `agency_type` values. [examples/austin-tx/](examples/austin-tx/) is a sample.
 
 ## Provenance is the point
@@ -230,7 +230,7 @@ search_agencies(query: "Parks and Recreation", jurisdiction_ids: [<place_id>])
 → not found: create_entity
 ```
 
-The same goes for `search_bodies`, `search_services`, `search_positions` (by `body_id`) and `search_people` (then `get_person_details` to see their seats).
+The same goes for `search_bodies`, `search_services`, `search_positions` (by `body_id`) and `search_people` — **by last name only**, since a full name finds nothing — then `get_person_details` to see their seats.
 
 **Choose the write:**
 
@@ -253,7 +253,7 @@ create_entity(entity_type: "body", name: "City Council", jurisdiction_id: 70118,
               entity_subtype: "council", source_url: "<council page>")              → body_id 200
 create_entity(entity_type: "position", name: "Mayor", jurisdiction_id: 70118,
               body_id: 200, source_url: "<roster>")                                 → position_id 300
-create_entity(entity_type: "person", first_name: "Ron", last_name: "Rowlett",
+create_entity(entity_type: "person", first_name: "Jane", last_name: "Doe",
               jurisdiction_id: 70118, position_id: 300, source_url: "<roster>")     → person 400, tenure created
 ```
 
