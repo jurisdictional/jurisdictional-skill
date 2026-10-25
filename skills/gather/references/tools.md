@@ -1,6 +1,6 @@
 # Jurisdictional MCP tools — what each one does when contributing
 
-Read 2026-10-23 from the live `tools/list` and the server code.
+Read 2026-10-25 from the live `tools/list` and the server code.
 The tool list itself is the source of truth: if a schema here disagrees with the one Claude sees, the live schema wins.
 
 ## Who sees what
@@ -10,6 +10,10 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
 | **Signed in** | `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_portrait_candidate`, `submit_jurisdiction_image_candidate`, `get_image_candidate` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
+
+**Rate limit.** An error `Rate limit exceeded. Limit: N requests per day` with `reset_at` stops every call on that key until then.
+Say so plainly, with the reset time in the user's terms, list what's left undone, and stop; don't retry.
+A session for one city uses roughly 100-300 calls.
 
 If `propose_change` is not in your tool list, the user is not signed in.
 If `reconcile_roster` is not in it, they are not an admin — use the non-admin path noted below.
@@ -21,11 +25,15 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
   Don't present a `non_governing` layer as a government, and don't gather for it.
 - `search_jurisdictions(query, level)` — `level` is `federal`, `state`, `county` or `municipal`.
 - `get_jurisdiction_details(id | ocd_id)` — also takes an Open Civic Data id.
-- `get_coverage(jurisdiction_id)` → counts per layer, missing-contact counts, ranked recommendations.
+- `get_coverage(jurisdiction_id)` → `coverage.coverage_level` (the ladder below), `tier`, counts per layer, missing-contact counts, ranked recommendations.
+  Recommendations are the same for every level: for a district or a state, ignore "find city departments".
 - `get_pending_tasks(jurisdiction_id, task_type?)` — task types: discover_agencies, extract_agency_contacts, discover_bodies, extract_officials, extract_services, extract_meeting_schedule, verify_stale_data, resolve_url, extract_budget.
-- `get_next_uncovered(state, level, coverage)` — `coverage`: `none` (no agencies, the default), `agencies` (agencies but no council or board), `governed` (agencies and a body but no services), `served`.
+- `get_next_uncovered(state, level, coverage, limit)` — `coverage`: `none` (no agencies, the default), `agencies` (agencies but no council or board), `governed` (agencies and a body but no services), `served`.
+  With `none` it also returns census-designated places, which have no government: in California every remaining one is a CDP.
+  A place whose `get_jurisdiction_details` has no `ocd_id` is probably one — skip it.
 - `get_body_details(id, as_of?)` → the body's seats and current holders, with tenure ids.
   Check it before gathering a roster from a website.
+- `search_people` matches one name field at a time: "Jane Doe" finds nothing, "Doe" finds her. Search by last name, then filter by jurisdiction.
 - `get_*_details` return each field's sources and a corroboration count.
 - Duplicate agencies are being merged: an agency id from an earlier session may stop resolving. Search by name again rather than reusing it.
 
@@ -33,8 +41,13 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 
 Signed in only.
 Renders the page in a headless browser and returns its HTML.
-Allowed: `.gov`, `.mil`, `.us`, `.org`, `.com`, and some civic-data and agenda-platform domains.
+Official government domains are allowed; `.com` and `.org` sites that aren't verified are refused with "domain not allowed", whatever the tool description says.
 The first fetch of a site can take 10-30 seconds.
+
+When it fails, ask the user for the page (SKILL.md Step 3) rather than retrying:
+- **"domain not allowed"** or **"Access Denied"**: the site is off the allowlist or blocks the fetcher.
+- **An empty page shell** (navigation, no content): the CMS loads content in the browser (Apptegy/Thrillshare sites do this).
+- **Don't fetch `sitemap.xml`** or other large indexes: one call hung for 40 minutes. Fetch the specific page.
 
 ## Writing
 
