@@ -34,16 +34,18 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a first-time user with no token, I run `/gather 300 Hemlock St, Vacaville, CA` and see my governments.*
 
-- Preflight says connected, not signed in, and doesn't block.
+- The first answer is Step 2's table; "not signed in" is one line under it, and nothing blocks.
 - The juricode comes from `set_location`; no layer is invented.
 - A `non_governing` county subdivision is not presented as a government.
 
-### T2 — The first screen is what exists
+### T2 — The first screen is every government's coverage
 
-*As a resident, before I'm asked anything, I see what's known about my city and what's missing.*
+*As a resident, before I'm asked anything, I see how well each government at my address is covered and what's missing.*
 
-- Calls `explore` for agencies, bodies, people and services, plus `get_coverage` and `get_pending_tasks`.
-- Names specific gaps ("8 agencies, 0 phone numbers"), not a generic offer to help.
+- `get_coverage` runs for every governing layer (place, school district, county, state) in one parallel batch, plus `get_pending_tasks`.
+- One table, worst-covered first, with rung and tier ("governed · Bronze") and one specific gap per row ("0 services; 30 agencies with no website or phone").
+- District layers appear as "not linked yet", with no offer to gather for them.
+- It recommends the lowest rung and says what it would change; the choice is an `AskUserQuestion` that includes "Just exploring".
 
 ### T3 — Exploring is a complete session
 
@@ -88,6 +90,7 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a contributor, I see what landed and what's waiting for review.*
 
+- Approval is per layer (one table for all new agencies), not a y/n per entity; the only stops are after Step 2, each review, and the next target.
 - Each entity is re-queried after writing; the summary marks live / pending review / corroborated.
 - `get_change_status` is used for proposals; links to `/users/contributions` work.
 
@@ -98,7 +101,8 @@ For a session, run `claude --plugin-dir .` from this repo.
 - `get_coverage` runs again at the end; agencies with zero services is called out, not reported as done.
 - The summary lists what couldn't be found, and why.
 - Open sourcing tasks are closed with `submit_sourcing_result` (`data: {}` when values were already submitted).
-- `get_next_uncovered` suggests a next target.
+- The rung and tier are reported before → after ("governed · Bronze → served · Silver").
+- The next target comes from the user's own address first; then `coverage: "governed"` places, largest first; never a census-designated place (no `ocd_id`).
 
 ### T10 — Edge cases
 
@@ -108,6 +112,21 @@ For a session, run `claude --plugin-dir .` from this repo.
 4. "Stop" mid-research stops without writing.
 5. "That's wrong, the fire department moved" — the skill defers and asks where it's published.
 6. A second session for the same city sees the first session's entities.
+
+### T11 — A regular contributor jumps straight to work
+
+*As someone who has done this before, `/gather next CA` takes me to the most useful place in California.*
+
+- No address is asked for; the options are partly covered places by population (Los Angeles, San Diego, San Jose with 0 services), not Acalanes Ridge or Acampo.
+- Picking one goes straight to Step 2 for it; finishing it offers the next one in the same session.
+
+### T12 — Limits and failures are said plainly
+
+*As a contributor whose key hits its daily limit, I'm told when it resets and what's left, not shown a stack of errors.*
+
+- On `Rate limit exceeded`, the skill stops calling tools, gives the reset time in local terms, and lists what wasn't done.
+- On `gather` "domain not allowed", an empty page shell, or a hang, it asks for the page instead of retrying; it never fetches `sitemap.xml`.
+- People are searched by last name before any person is created.
 
 ## Scoring
 
@@ -123,3 +142,5 @@ For a session, run `claude --plugin-dir .` from this repo.
 | T8 | | |
 | T9 | | |
 | T10 | | |
+| T11 | | |
+| T12 | | |

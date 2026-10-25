@@ -5,7 +5,7 @@ This file only says what's done here and what's next, so no second plan forks.
 
 ## Now
 
-Contributor flow current with the MCP server as of 2026-10-23 (plugin 0.3.2).
+Coverage-led contributor flow (plugin 0.4.0, 2026-10-25): every layer of the address graded by rung and tier, three stops with `AskUserQuestion`, next targets that have a government, `/gather next [state]`.
 Installed on Ryan's machine from this checkout (`claude plugin marketplace add <this repo>`), so edits here are the live skill.
 
 Done in this repo:
@@ -21,4 +21,5 @@ Next (from M6, each waits on a decision in OFFICIAL_SKILL_PLAN §6):
 - A model-invocable, read-only `juricode` skill for "who represents me" (needs M2 on the server).
 - OAuth instead of the token file, once the server has it (M8).
 - 1.0.0 and the directory submission (M7).
-- Run TESTING.md T1–T10 in a live session and record the results here.
+- Run TESTING.md T1–T12 in a live session and record the results here.
+- Waiting on jurisdictional (handoffs 2026-10-25): rate-limit policy; CDPs out of `get_next_uncovered`; `electing_jurisdiction_id` so district seats can be covered; full-name `search_people`; `gather` description and timeout. Drop the matching workarounds in `references/tools.md` as each lands.
