@@ -89,43 +89,52 @@ If the user provided arguments, use them: `$ARGUMENTS`
    County subdivisions marked `kind: "non_governing"` are statistical areas, not governments: leave them out, or label them as such.
 3. Keep the `jurisdiction_ids`; they scope every later query.
 
-### Step 2: Show what exists
+### Step 2: Show what exists, layer by layer
 
-Before asking anything, show what's known.
+Before asking anything, show how well each government at the address is covered.
+Call `get_coverage` for every governing layer of the juricode, and `get_pending_tasks` for the city, **in parallel in one message**:
 
 ```
-explore(focus: "agencies", jurisdiction_ids: [...], limit: 50)
-explore(focus: "bodies",   jurisdiction_ids: [...], limit: 50)
-explore(focus: "people",   jurisdiction_ids: [...], limit: 50)
-explore(focus: "services", jurisdiction_ids: [...], limit: 50)
-get_coverage(jurisdiction_id: <place_id>)
-get_pending_tasks(jurisdiction_id: <place_id>, limit: 5)
+get_coverage(jurisdiction_id: 70118)     # Vacaville (place)
+get_coverage(jurisdiction_id: 77297)     # Vacaville Unified School District
+get_coverage(jurisdiction_id: 2532)      # Solano County
+get_coverage(jurisdiction_id: 3274)      # California
+get_pending_tasks(jurisdiction_id: 70118, limit: 5)
 ```
 
-`get_coverage` gives counts per layer, missing contacts and ranked recommendations — use it to name *specific* gaps instead of a manual tally.
-Keep any `task_id` from `get_pending_tasks`; Step 6 closes them.
-For a council or board, `get_body_details(id)` shows its seats and who holds them.
+Skip the federal layer (national, not local) and `non_governing` subdivisions.
+Keep any `task_id`; Step 6 closes them.
 
-Civic data builds up in layers:
+**Coverage is a ladder, and each rung says what to gather next:**
 
-1. **Jurisdictions** — already exist (the juricode)
-2. **Agencies** — departments, offices, authorities
-3. **Governing bodies** — city council, commissions, boards
-4. **Positions** — seats in those bodies (Mayor, Council Member District 1)
-5. **People** — who holds each seat now (as tenures)
-6. **Services** — what residents can do: pay, apply, report, reserve. Listed last because services attach to agencies, *not* because they matter least — they are what most residents come looking for. Gather them alongside agencies.
-7. **Meetings** — when bodies meet, with agenda, minutes and video links.
+| `coverage_level` | Means | What moves it up |
+|---|---|---|
+| `none` | no agencies | the departments, and their services alongside — `import_jurisdiction` |
+| `agencies` | agencies, no council or board | the governing body, its seats and who holds them |
+| `governed` | agencies and a body, no services | services: what a resident can pay, apply for, report or reserve |
+| `served` | all three | the tier and quality gaps below |
 
-Summarize from the data:
-- "Vacaville has 12 agencies and 1 governing body, but no seats or people yet."
-- "Solano County has 8 agencies but no phone numbers or emails. Top gap: contact info."
-- "The police department is listed but has no services."
+`tier` is the finer grade: `uncovered` → **Bronze** "Claimed" (a governing body) → **Silver** "Structured" (5+ agencies with websites) → **Gold** "Staffed" (that, plus seats with people in them).
+Past Gold, `quality` names what's missing: agencies without phone, email or website.
 
-If a jurisdiction is empty, say so directly: "Vacaville has no data yet. The first step is the city departments — everything else builds on them."
+**Show the stack as one table**, worst-covered first among the governments, with the single most useful gap for each:
 
-Then ask: "Want to help fill any of this in, or keep exploring?"
+```
+Your governments at 300 Hemlock St, Vacaville
 
-If they have a question, answer it first. If they only want to explore, stay here — drill in, show who represents them. That is a complete session.
+  Government                          Coverage            Biggest gap
+  California                          governed · Bronze   0 services; 30 agencies with no website or phone
+  Solano County                       served · Gold       8 of 24 agencies lack email
+  Vacaville Unified School District   served · Gold       15 of 17 agencies lack email
+  Vacaville                           served · Gold       5 of 15 agencies lack a phone
+  Your districts                      —                   CD 4 · SD 3 · AD 11 · Supervisorial District 4: representatives not linked yet
+```
+
+**Districts** (congressional, state legislative, county supervisorial) are covered by the seat they elect, which the tools can't link to the district yet.
+Show them, but don't offer to gather for them; if the user asks who represents them, find the seat on the body (`get_body_details` for the Board of Supervisors).
+
+Then recommend one gap, the lowest rung first, and say what it would change: "California has no services at all — adding the DMV and state tax services would take it from governed to served."
+If they asked a question, answer it first. If they only want to explore, stay here — drill in with `explore(focus: "agencies" | "bodies" | "people" | "services", jurisdiction_ids: [...])` and `get_body_details`. That is a complete session.
 
 ### Step 3: Research
 
@@ -277,7 +286,7 @@ Use `get_change_status(change_ids: [...])` to see whether a proposal is pending,
 **Close the sourcing tasks** from Step 2 with `submit_sourcing_result` — `status: "success"`, `"partial"` or `"failed"` with a `failure_reason`.
 If you already submitted the values, pass `data: {}` so they aren't proposed twice.
 
-**Re-check coverage** with `get_coverage` and compare it with Step 2.
+**Re-check coverage** with `get_coverage` for the jurisdictions you worked on, and show the change in Step 2's terms: "Vacaville: governed · Bronze → served · Silver", or "still governed · Bronze: 0 services".
 
 - **Zero services with agencies is a red flag, not a finished session.** Say so: "18 agencies but 0 services — I haven't captured what residents can actually do yet. Want me to work the 'How Do I' page and quick links?" Don't move on with a silent zero.
 - **Report what you did NOT find, and why** — no published roster, no term dates, a page that blocked the fetcher. Gaps named are gaps someone else can fill; gaps hidden look like completeness. An admin can record a blocked site with `record_coverage_gap`.
@@ -319,6 +328,7 @@ get_next_uncovered(state: "CA", level: "place", limit: 1)
 - **Don't overwhelm.** Someone interested in water rates doesn't need every agency in the county.
 - **Respect the scope.** Exploring without contributing is a complete experience.
 - **Be specific about impact.** "Adding this meeting schedule means anyone in Vacaville can find when their council meets" beats "this data is useful."
+- **Coverage is the scoreboard.** Name the rung and tier before and after, and what would move it up next.
 - **Services are the payoff layer.** Agencies and officials are scaffolding; a jurisdiction with 18 agencies and 0 services is an org chart, not coverage.
 - **New entities go live; edits get reviewed.** Take the most care with `create_entity` and `import_jurisdiction`.
 - **Source hierarchy.** The government's own site (via `gather`) first; then other official sites (a state municipal league, the county); then news; then the user's local knowledge, attributed as "user-provided". Search snippets and training data are never sources.
