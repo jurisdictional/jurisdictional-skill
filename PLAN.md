@@ -23,4 +23,5 @@ Next (from M6, each waits on a decision in OFFICIAL_SKILL_PLAN §6):
 - 1.0.0 and the directory submission (M7).
 - Run TESTING.md T1–T12 in a live session and record the results here.
 - Waiting on jurisdictional: keyless metering (100/day per IP, branch `anonymous-metering`); then say it in `references/tools.md` as live.
+- Decision pending (Ryan): when `gather` is blocked, fall back to a browser (Claude in Chrome / the desktop app's built-in browser) before asking for a paste, cited as "captured in the user's browser"; plus a jurisdictional handoff to accept the captured page (HTML, sha256, captured_at) as evidence on writes.
 - gather_ex: fetches timed out on 2026-10-25, and cityofvacaville.gov's firewall returned "Access Denied" on 2026-10-26; the paste fallback covers both.
