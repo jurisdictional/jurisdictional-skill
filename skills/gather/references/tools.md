@@ -137,7 +137,20 @@ submit_portrait_candidate(person_id: 400, source_url: "<image file URL>",
 submit_jurisdiction_image_candidate(jurisdiction_id: 70118, kind: "logo" | "flag", source_url, source_page_url, discovered_at)
 ```
 
-`get_image_candidate(image_id)` shows its review status.
+`get_image_candidate(image_id)` shows its review status: `fetched` with `original_stored: true` means it is ready for review; `failed` with HTTP 403 means the host blocks our server, so resubmit with the bytes your browser received (`image_base64` + `image_sha256`).
+
+**Admin: approve in the same session** with `approve_image_candidate(image_id, license, license_evidence, attribution?)`.
+Look at the image first (one face, the right person).
+The license follows from where the photo was published:
+
+| Where | `license` | `attribution` |
+|---|---|---|
+| A CA or FL city or county site, no photographer credited | `public-domain-ca-gov` / `public-domain-fl-gov` | optional |
+| Any other state's city or county site, the official's headshot, no photographer credited | `government-published-headshot` (not a public-domain claim) | required: the government, e.g. "City of Austin" |
+| A school district or college site, or a photographer credited | `unknown` (stays hidden) | |
+
+`license_evidence` names the page and the rule, e.g. "Official headshot on https://www.austintexas.gov/council; no photographer credited".
+Non-admins leave candidates for an admin and list them in the session summary.
 
 ### Closing the loop
 

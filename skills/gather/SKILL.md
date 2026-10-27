@@ -175,7 +175,11 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
 
 - **Agencies:** set `agency_type` from what the agency does (police, parks_recreation, planning...), or leave it out when the page doesn't make it clear. Structural words like "department" are rejected. The list is in [schema.md](schema.md).
 - **Officials:** read the roster page; note start dates and term ends only when published.
-- **Photos and logos:** if a headshot, city logo or flag appears on a page you fetched, note the image URL and the page URL — they are submitted for review in Step 6.
+- **Photos, every time:** whenever a page you fetched shows officials (a roster, a bio, a board page), take each matched holder's headshot from the same HTML: the `<img>` whose alt, caption or file name carries the person's name, or the one nearest their name, never from the header, nav, footer or a slider.
+  Take the largest size the page offers (`srcset`), keep the alt and caption verbatim, and note any photographer credit next to the image.
+  Do this even when the roster itself is unchanged: `get_body_details` shows `image: null` for holders without a photo.
+  City logos and flags on a page you fetched are noted the same way.
+  All of them are submitted in Step 6.
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
 - **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
@@ -293,7 +297,9 @@ Use `get_change_status(change_ids: [...])` to see whether a proposal is pending,
   Jurisdiction:   https://jurisdictional.org/jurisdictions/70118
 ```
 
-**Submit images** you noted in Step 3 with `submit_portrait_candidate` or `submit_jurisdiction_image_candidate`; they appear publicly only after review.
+**Submit images** you noted in Step 3 with `submit_portrait_candidate` or `submit_jurisdiction_image_candidate`, one per matched holder; they appear publicly only after review.
+If you are an admin, review them in the same session with `approve_image_candidate`, using the license rule in [tools.md](references/tools.md): the goal is photos showing, not a queue.
+Re-query the body afterwards: each approved holder's `image` is no longer null.
 
 **Close the sourcing tasks** from Step 2 with `submit_sourcing_result` — `status: "success"`, `"partial"` or `"failed"` with a `failure_reason`.
 If you already submitted the values, pass `data: {}` so they aren't proposed twice.
