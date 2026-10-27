@@ -44,7 +44,7 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 - `get_coverage` runs for every governing layer (place, school district, county, state, and the districts) in one parallel batch, plus `get_pending_tasks`.
 - One table, worst-covered first, with rung and tier ("governed · Bronze") and one specific gap per row ("0 services; 30 agencies with no website or phone").
-- District layers are graded by their seats; one with no linked seat is offered as a quick contribution (link it with `electing_jurisdiction_id`).
+- District layers are shown by seats held ("1 of 1 held · Gold"), never "none · Gold"; one with no linked seat is offered as a quick contribution (link it with `electing_jurisdiction_id`).
 - "Who represents me?" is answered with `explore(focus: "people")` over the district layers, naming the representative for each.
 - It recommends the lowest rung and says what it would change; the choice is an `AskUserQuestion` that includes "Just exploring".
 
@@ -68,7 +68,8 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a reviewer, every value I'm asked to approve has a source I can open.*
 
-- Pages are fetched with `gather`; `WebSearch` is used only to find URLs.
+- Pages are read with `gather` (or an archived capture, a connected browser, or the user's paste); `WebSearch` is used only to find URLs.
+- An archived capture's row names its capture date; a roster from one older than a few months is rechecked with `gather(url, live: true)`.
 - Every row of the Step 4 table has a source URL or "user-provided".
 - Fail: any value that appears only in a search snippet, or with no source.
 
@@ -126,7 +127,7 @@ For a session, run `claude --plugin-dir .` from this repo.
 *As a contributor whose key hits its daily limit, I'm told when it resets and what's left, not shown a stack of errors.*
 
 - On an error with `data.reason: "rate_limited"`, the skill stops calling tools, gives the reset time in local terms, offers `upgrade_url` or `signup_url`, and lists what wasn't done.
-- On `gather timed out`, `gather empty render`, `Domain not allowed`, or an "Access Denied" page returned as content, it asks for the page instead of retrying or extracting from it.
+- On `gather timed out`, `gather empty render`, `Domain not allowed`, or an "Access Denied" page returned as content, it doesn't retry or extract from it: with a browser connected it reads the page there (cited "captured in the user's browser"); otherwise it asks for a paste.
 - Before creating a person it searches the full name, then the last name alone.
 
 ## Scoring
