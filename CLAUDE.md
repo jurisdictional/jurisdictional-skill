@@ -28,7 +28,7 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 - **Access tiers**: no token → 19 public read tools. Signed in → `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, image candidates. Admin → `reconcile_roster`, `end_tenure`, `merge_entities`, `delete_entity`, coverage reports.
 - **Auth**: no header or an empty bearer gets the public tools; an unknown key gets HTTP 401 for the whole connection, so the helper sends no header unless the file holds a `jur_...` key. Plugin helpers don't see `TOKEN`-like env vars, so the token lives in `~/.jurisdictional/token` (from `/auth/cli`).
 - **Writes**: `create_entity` and `import_jurisdiction` apply live; `propose_change` queues for review, or corroborates when the value is unchanged.
-- **Provenance**: values come only from pages fetched with `gather`, or from the user. Never search snippets or training data.
+- **Provenance**: values come only from pages fetched with `gather`, archived captures read with `mcc_read` (local Common Crawl server, `~/workspace/municipal-common-crawl`, cited with the capture date), or the user. Never search snippets or training data.
 
 ## When Modifying the Skill
 

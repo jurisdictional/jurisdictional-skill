@@ -30,7 +30,7 @@ The user has local knowledge you don't — defer to them on what's accurate.
 Every fact submitted must trace back to a page someone can open and check.
 Data without a source is opinion. Data with a source is evidence.
 
-- **Values come from pages you fetched with `gather`, or from the user.** Nothing else.
+- **Values come from pages you fetched with `gather`, an archived capture of the government's own page (`mcc_read`, cited with its capture date), or the user.** Nothing else.
 - **`WebSearch` finds URLs; it is never a source of values.** Search snippets are not the page: a snippet can be stale, truncated or from another city. Find the URL, then `gather` it and read the value there.
 - **Never use training data as a source.** Departments get reorganized, officials leave, numbers change. Training knowledge may guide research ("this city probably has a Parks department — let me look"), but the submitted value must come from the page you find. If you think you know something but can't find it, say so: "I think the police number is X, but I can't find it on their site — can you check?"
 - **An empty field is better than an unsourced one.**
@@ -166,6 +166,14 @@ gather(url: "https://www.cityofvacaville.gov/departments")
 It renders the page in a real browser and returns the HTML.
 Don't use `WebFetch` for government sites — they block it (403, 503).
 Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL to `gather`.
+
+**Archived copy first, if you have one.** When `mcc_*` tools are in your tool list (a local Common Crawl archive of municipal .gov sites, set up on some machines only), read from it before fetching live: it is faster, puts no load on the city's site, and reaches sites that block fetchers.
+1. `mcc_coverage(site)`. Not covered: fetch live with `gather` as above.
+2. Find the page, don't guess its URL: `mcc_find(site, "City Council")`, or `mcc_pages(site, path: "/departments/fire")`.
+   For an agency's contacts, use the department's own landing page (lowest `depth`); a sub-page's phone belongs to the sub-unit.
+3. `mcc_read(url, around: "Phone:")` for a contact block, or `format: "images"` for headshots (src, srcset, alt and caption).
+4. Cite the page's own URL as `source_url`, and put the capture date in `notes` ("Common Crawl capture, CC-MAIN-2026-39, 2026-09-15").
+   People and rosters change: if the capture is more than a few months old, confirm them with a live `gather`.
 
 **Check what came back before reading it.** Many government sites block automated fetches: an "Access Denied", "Request blocked" or captcha page arrives as ordinary HTML, not as an error. Treat it like an error.
 
