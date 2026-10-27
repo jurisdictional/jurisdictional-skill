@@ -5,7 +5,7 @@ This file only says what's done here and what's next, so no second plan forks.
 
 ## Now
 
-Coverage-led contributor flow (plugin 0.4.1, 2026-10-26; districts graded by their seats): every layer of the address graded by rung and tier, three stops with `AskUserQuestion`, next targets that have a government, `/gather next [state]`.
+Coverage-led contributor flow (plugin 0.4.2, 2026-10-26; districts graded by their seats): every layer of the address graded by rung and tier, three stops with `AskUserQuestion`, next targets that have a government, `/gather next [state]`.
 Installed on Ryan's machine from this checkout (`claude plugin marketplace add <this repo>`), so edits here are the live skill.
 
 Done in this repo:
