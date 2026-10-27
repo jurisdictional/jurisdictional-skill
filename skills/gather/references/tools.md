@@ -12,7 +12,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `approve_image_candidate`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
-No token is unmetered for now; a limit of 100 a day per IP is coming.
+No token: 100 requests a day per IP (live since 2026-10-26), shared by everyone behind that address; one address's Step 2 costs about 10.
 A limit reached is an error with `data.reason: "rate_limited"`, `reset_at`, and `upgrade_url` (signed in) or `signup_url` (no token).
 Say so plainly, with the reset time in the user's terms, offer whichever link is there, list what's left undone, and stop; don't retry.
 
