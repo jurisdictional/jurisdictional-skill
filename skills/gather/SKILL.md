@@ -149,6 +149,7 @@ For "who represents me", call `explore(focus: "people", jurisdiction_ids: [<the 
 Then recommend one gap, the lowest rung first, and say what it would change: "California has no services at all — adding the DMV and state tax services would take it from governed to served."
 Ask with `AskUserQuestion`: the recommended gap, one or two others from the table, and "Just exploring".
 If they asked a question, answer it first. If they only want to explore, stay here — drill in with `explore(focus: "agencies" | "bodies" | "people" | "services", jurisdiction_ids: [...])` and `get_body_details`. That is a complete session.
+For "what's near me?", use the geocode from `set_location` with `find_services_near_point` or `find_agencies_near_point(lat, lng, radius_meters)`.
 
 ### Step 3: Research
 

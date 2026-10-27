@@ -93,7 +93,7 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 - Approval is per layer (one table for all new agencies), not a y/n per entity; the only stops are after Step 2, each review, and the next target.
 - Each entity is re-queried after writing; the summary marks live / pending review / corroborated.
-- `get_change_status` is used for proposals; links to `/users/contributions` work.
+- `get_change_status` is used for proposals; every link in the summary (entity pages, `/users/contributions`, the jurisdiction) opens and shows the submitted data.
 
 ### T9 — The session reports what it didn't find
 
