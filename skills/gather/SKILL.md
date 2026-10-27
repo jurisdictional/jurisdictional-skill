@@ -138,9 +138,11 @@ Your governments at 300 Hemlock St, Vacaville
   Solano County                       served · Gold       8 of 24 agencies lack email
   Vacaville Unified School District   served · Gold       15 of 17 agencies lack email
   Vacaville                           served · Gold       5 of 15 agencies lack a phone
-  Assembly District 11                Uncovered           no seat linked to the district
-  Supervisorial District 4            Gold                every seat it elects is held
+  Assembly District 11                0 of 1 seat linked  no seat linked to the district
+  Supervisorial District 4            1 of 1 held · Gold  —
 ```
+
+Show a district by its seats (`counts.elected_seats_held` of `elected_seats`, and its tier), never by `coverage_level`: a district has no agencies, so that always reads `none`.
 
 **Districts** are covered by the seat they elect, linked to the district with `electing_jurisdiction_id` (see [tools.md](references/tools.md)).
 A district with no linked seat is a quick contribution: find the seat on its body (the Assembly, the Board of Supervisors), then link it; `get_coverage` gives the exact call.
