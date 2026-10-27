@@ -111,6 +111,7 @@ get_coverage(jurisdiction_id: 3274)      # California
 get_pending_tasks(jurisdiction_id: 70118, limit: 5)
 ```
 
+Include the district layers (congressional, state legislative, county district): their coverage is the seats they elect.
 Skip the federal layer (national, not local) and `non_governing` subdivisions.
 Keep any `task_id`; Step 6 closes them.
 
@@ -125,6 +126,7 @@ Keep any `task_id`; Step 6 closes them.
 
 `tier` is the finer grade: `uncovered` → **Bronze** "Claimed" (a governing body) → **Silver** "Structured" (5+ agencies with websites) → **Gold** "Staffed" (that, plus seats with people in them).
 Past Gold, `quality` names what's missing: agencies without phone, email or website.
+A district's tier is about its seats instead: Gold when every seat it elects has a current holder.
 
 **Show the stack as one table**, worst-covered first among the governments, with the single most useful gap for each:
 
@@ -136,11 +138,13 @@ Your governments at 300 Hemlock St, Vacaville
   Solano County                       served · Gold       8 of 24 agencies lack email
   Vacaville Unified School District   served · Gold       15 of 17 agencies lack email
   Vacaville                           served · Gold       5 of 15 agencies lack a phone
-  Your districts                      —                   CD 4 · SD 3 · AD 11 · Supervisorial District 4: representatives not linked yet
+  Assembly District 11                Uncovered           no seat linked to the district
+  Supervisorial District 4            Gold                every seat it elects is held
 ```
 
-**Districts** (congressional, state legislative, county supervisorial) are covered by the seat they elect, which the tools can't link to the district yet.
-Show them, but don't offer to gather for them; if the user asks who represents them, find the seat on the body (`get_body_details` for the Board of Supervisors).
+**Districts** are covered by the seat they elect, linked to the district with `electing_jurisdiction_id` (see [tools.md](references/tools.md)).
+A district with no linked seat is a quick contribution: find the seat on its body (the Assembly, the Board of Supervisors), then link it; `get_coverage` gives the exact call.
+For "who represents me", call `explore(focus: "people", jurisdiction_ids: [<the district layers>])`.
 
 Then recommend one gap, the lowest rung first, and say what it would change: "California has no services at all — adding the DMV and state tax services would take it from governed to served."
 Ask with `AskUserQuestion`: the recommended gap, one or two others from the table, and "Just exploring".
@@ -234,7 +238,7 @@ search_agencies(query: "Parks and Recreation", jurisdiction_ids: [<place_id>])
 → not found: create_entity
 ```
 
-The same goes for `search_bodies`, `search_services`, `search_positions` (by `body_id`) and `search_people` — **by last name only**, since a full name finds nothing — then `get_person_details` to see their seats.
+The same goes for `search_bodies`, `search_services`, `search_positions` (by `body_id`) and `search_people` — the full name, then the last name alone if that finds nothing — then `get_person_details` to see their seats.
 
 **Choose the write:**
 
@@ -244,6 +248,7 @@ The same goes for `search_bodies`, `search_services`, `search_positions` (by `bo
 | One new entity | `create_entity` |
 | A missing or wrong field on an existing entity | `propose_change`, once per field |
 | A value already there, confirmed by another page | `propose_change` with the same value and the new `source_url` |
+| Linking a seat to the district that elects it | `create_entity(entity_type: "position", body_id, electing_jurisdiction_id)`, or `propose_change(field_name: "electing_jurisdiction_id")` on an existing seat |
 | Seating a person | `create_entity(entity_type: "person", position_id, source_url, start_date?, term_ends_on?)` |
 | A whole roster changed (admin) | `reconcile_roster` — dry run first, show the plan, then apply |
 | Someone left a seat (admin) | `end_tenure` with the page that shows it; otherwise note it for an admin |
@@ -334,8 +339,8 @@ If they pick one, continue at Step 2 for it — no new preflight or location.
 In this order:
 
 1. **Another government at this address** below `served` or below Gold, from Step 2's table. The user lives there, so the gap is theirs.
-2. **The biggest places in the state that are partly covered:** `get_next_uncovered(state: "CA", level: "place", coverage: "governed", limit: 5)` (no services yet), then `coverage: "agencies"` (no council). Prefer the largest population: Los Angeles with no services matters more than a village with none.
-3. **Places with nothing yet:** `coverage: "none"`. This also returns census-designated places, which have no government — check each with `get_jurisdiction_details` and skip any without an `ocd_id`.
+2. **The biggest places in the state that are partly covered:** `get_next_uncovered(state: "CA", level: "place", coverage: "governed", limit: 5)` (no services yet), then `coverage: "agencies"` (no council). Results come largest first: Los Angeles with no services matters more than a village with none.
+3. **Places with nothing yet:** `coverage: "none"` (only places with a government; empty once a state has none left).
 
 Offer two or three with `AskUserQuestion`, each with its rung and population ("San Diego — governed, 1.4M people, 0 services"), plus "Stop here".
 

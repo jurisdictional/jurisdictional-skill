@@ -1,6 +1,6 @@
 # Jurisdictional MCP tools — what each one does when contributing
 
-Read 2026-10-25 from the live `tools/list` and the server code.
+Read 2026-10-26 from the live `tools/list` and the server code.
 The tool list itself is the source of truth: if a schema here disagrees with the one Claude sees, the live schema wins.
 
 ## Who sees what
@@ -9,11 +9,12 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 |---|---|
 | **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
 | **Signed in** | `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_portrait_candidate`, `submit_jurisdiction_image_candidate`, `get_image_candidate` |
-| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
+| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `approve_image_candidate`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
-**Rate limit.** An error `Rate limit exceeded. Limit: N requests per day` with `reset_at` stops every call on that key until then.
-Say so plainly, with the reset time in the user's terms, list what's left undone, and stop; don't retry.
-A session for one city uses roughly 100-300 calls.
+**Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
+No token is unmetered for now; a limit of 100 a day per IP is coming.
+A limit reached is an error with `data.reason: "rate_limited"`, `reset_at`, and `upgrade_url` (signed in) or `signup_url` (no token).
+Say so plainly, with the reset time in the user's terms, offer whichever link is there, list what's left undone, and stop; don't retry.
 
 If `propose_change` is not in your tool list, the user is not signed in.
 If `reconcile_roster` is not in it, they are not an admin — use the non-admin path noted below.
@@ -25,15 +26,18 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
   Don't present a `non_governing` layer as a government, and don't gather for it.
 - `search_jurisdictions(query, level)` — `level` is `federal`, `state`, `county` or `municipal`.
 - `get_jurisdiction_details(id | ocd_id)` — also takes an Open Civic Data id.
-- `get_coverage(jurisdiction_id)` → `coverage.coverage_level` (the ladder below), `tier`, counts per layer, missing-contact counts, ranked recommendations.
-  Recommendations are the same for every level: for a district or a state, ignore "find city departments".
+  A place carries `kind` (`governing`, `non_governing` for a census-designated place, `unclassified`) and `census_funcstat`.
+  `elected_seats` lists the seats this jurisdiction elects, with each current holder (or null).
+- `get_coverage(jurisdiction_id)` → `coverage.coverage_level` (the ladder below), `tier`, counts per layer, missing-contact counts, ranked recommendations by level.
+  For an electoral district, coverage is its seats: `counts.elected_seats` / `elected_seats_held`, the tier is based on them, and the recommendations are `link_district_seat` (with the exact `create_entity` call) or `add_officials`.
 - `get_pending_tasks(jurisdiction_id, task_type?)` — task types: discover_agencies, extract_agency_contacts, discover_bodies, extract_officials, extract_services, extract_meeting_schedule, verify_stale_data, resolve_url, extract_budget.
 - `get_next_uncovered(state, level, coverage, limit)` — `coverage`: `none` (no agencies, the default), `agencies` (agencies but no council or board), `governed` (agencies and a body but no services), `served`.
-  With `none` it also returns census-designated places, which have no government: in California every remaining one is a CDP.
-  A place whose `get_jurisdiction_details` has no `ocd_id` is probably one — skip it.
+  Largest population first. For places, only those with a government of their own (no census-designated places) unless `include_statistical: true`.
+  An empty result means that rung is done in that state (California has no governing place at `none`): try the next rung.
 - `get_body_details(id, as_of?)` → the body's seats and current holders, with tenure ids.
   Check it before gathering a roster from a website.
-- `search_people` matches one name field at a time: "Jane Doe" finds nothing, "Doe" finds her. Search by last name, then filter by jurisdiction.
+- `explore(focus: "people", jurisdiction_ids)` also returns whoever holds the seats those jurisdictions elect, so passing the district layers from `set_location` answers "who represents me". There is no `positions` focus.
+- `search_people(query)` matches first, last or full name, ignoring case and accents. A middle initial stored in the first name ("Jane Q.") breaks a full-name match, so if "Jane Doe" finds nothing, search "Doe" and filter by jurisdiction before creating anyone.
 - `get_*_details` return each field's sources and a corroboration count.
 - Duplicate agencies are being merged: an agency id from an earlier session may stop resolving. Search by name again rather than reusing it.
 
@@ -41,13 +45,14 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 
 Signed in only.
 Renders the page in a headless browser and returns its HTML.
-Official government domains are allowed; `.com` and `.org` sites that aren't verified are refused with "domain not allowed", whatever the tool description says.
-The first fetch of a site can take 10-30 seconds.
+Allowed: `.gov`, `.mil`, `.us`, `.com`, `.org`, `.net`, plus granicus.com, legistar.com and escribemeetings.com.
+A call gives up after 60 seconds.
 
 When it fails, ask the user for the page (SKILL.md Step 3) rather than retrying:
-- **"domain not allowed"** or **"Access Denied"**: the site is off the allowlist or blocks the fetcher.
-- **An empty page shell** (navigation, no content): the CMS loads content in the browser (Apptegy/Thrillshare sites do this).
-- **Don't fetch `sitemap.xml`** or other large indexes: one call hung for 40 minutes. Fetch the specific page.
+- **`Error: gather timed out`** or **`Error: gather empty render`** (a JavaScript-only site): the error says to ask the user to paste.
+- **`Error: Domain not allowed`**: off the allowlist.
+- **An "Access Denied" page returned as content**: the site's firewall blocks the fetcher (cityofvacaville.gov did on 2026-10-26). It is not an error, so read what came back before using it.
+- Fetch the specific page, not `sitemap.xml` or other large indexes.
 
 ## Writing
 
@@ -78,7 +83,7 @@ Every field set on the new row is recorded as a claim citing `source_url`, and i
 | agency | `jurisdiction_id` | `entity_subtype` = agency_type (function only, or omit). `website_url` = the agency's own page, not the list of departments you found it on; omit it if the agency has none. The government itself is the jurisdiction: never create a "City of …" agency for it. |
 | body | `jurisdiction_id` | Omit `agency_id` for a council or board: it belongs to the jurisdiction. `entity_subtype` = legislative_type (council, commission, board). `source_url` becomes the body's `source`. |
 | service | `jurisdiction_id`, `agency_id` | `online_url` = the action link (portal, form), not the page describing it — see [services.md](services.md). `cost`, `eligibility`. |
-| position | `jurisdiction_id`, `body_id` (or `agency_id`) | A position with the same label under the same body is returned, not duplicated. |
+| position | `jurisdiction_id`, `body_id` (or `agency_id`) | A position with the same label under the same body is returned, not duplicated. For a district seat, `electing_jurisdiction_id` = the district whose voters elect it (county_district, city_council_district, board_of_equalization_district, congressional_district, state_legislative_upper/lower): "Supervisor, District 4" on the Board of Supervisors gets Supervisorial District 4. The body stays with its own jurisdiction. On an existing position, `propose_change(field_name: "electing_jurisdiction_id")`. |
 | person | `jurisdiction_id`; `position_id` to seat them | Use `first_name`/`last_name` exactly as published. With `position_id`, a tenure is created and **`source_url` is required** (the roster or bio page). `start_date` and `term_ends_on` only when the source publishes them. Re-creating a person who already holds the seat refreshes that tenure's source instead of adding a second one. |
 | meeting | `jurisdiction_id`, `body_id`, `start_time` | `agenda_url`, `minutes_url`, `video_url`, `status` (scheduled, completed, cancelled, postponed), `external_id` (eScribe GUID, Granicus clip id). |
 | agenda_item | `jurisdiction_id`, `meeting_id` | |

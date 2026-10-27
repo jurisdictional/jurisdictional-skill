@@ -42,9 +42,10 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a resident, before I'm asked anything, I see how well each government at my address is covered and what's missing.*
 
-- `get_coverage` runs for every governing layer (place, school district, county, state) in one parallel batch, plus `get_pending_tasks`.
+- `get_coverage` runs for every governing layer (place, school district, county, state, and the districts) in one parallel batch, plus `get_pending_tasks`.
 - One table, worst-covered first, with rung and tier ("governed · Bronze") and one specific gap per row ("0 services; 30 agencies with no website or phone").
-- District layers appear as "not linked yet", with no offer to gather for them.
+- District layers are graded by their seats; one with no linked seat is offered as a quick contribution (link it with `electing_jurisdiction_id`).
+- "Who represents me?" is answered with `explore(focus: "people")` over the district layers, naming the representative for each.
 - It recommends the lowest rung and says what it would change; the choice is an `AskUserQuestion` that includes "Just exploring".
 
 ### T3 — Exploring is a complete session
@@ -102,7 +103,7 @@ For a session, run `claude --plugin-dir .` from this repo.
 - The summary lists what couldn't be found, and why.
 - Open sourcing tasks are closed with `submit_sourcing_result` (`data: {}` when values were already submitted).
 - The rung and tier are reported before → after ("governed · Bronze → served · Silver").
-- The next target comes from the user's own address first; then `coverage: "governed"` places, largest first; never a census-designated place (no `ocd_id`).
+- The next target comes from the user's own address first; then `coverage: "governed"` places, largest first; never a census-designated place (`kind: "non_governing"`).
 
 ### T10 — Edge cases
 
@@ -124,9 +125,9 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a contributor whose key hits its daily limit, I'm told when it resets and what's left, not shown a stack of errors.*
 
-- On `Rate limit exceeded`, the skill stops calling tools, gives the reset time in local terms, and lists what wasn't done.
-- On `gather` "domain not allowed", an empty page shell, or a hang, it asks for the page instead of retrying; it never fetches `sitemap.xml`.
-- People are searched by last name before any person is created.
+- On an error with `data.reason: "rate_limited"`, the skill stops calling tools, gives the reset time in local terms, offers `upgrade_url` or `signup_url`, and lists what wasn't done.
+- On `gather timed out`, `gather empty render`, `Domain not allowed`, or an "Access Denied" page returned as content, it asks for the page instead of retrying or extracting from it.
+- Before creating a person it searches the full name, then the last name alone.
 
 ## Scoring
 
