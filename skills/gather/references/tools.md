@@ -9,7 +9,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 |---|---|
 | **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
 | **Signed in** | `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_portrait_candidate`, `submit_jurisdiction_image_candidate`, `get_image_candidate` |
-| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `approve_image_candidate`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
+| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image_candidate`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
 No token: 100 requests a day per IP (live since 2026-10-26), shared by everyone behind that address; one address's Step 2 costs about 10.
@@ -119,13 +119,15 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
 
 `import_civicplus_directory` is for admins working from the jurisdictional repo's import script; skip it in conversation.
 
-### Rosters (admin): `reconcile_roster`, `end_tenure`
+### Rosters (admin): `reconcile_roster`, `end_tenure`, `link_district_seats`
 
 `reconcile_roster(body_id, source_url, as_of, members: [{position_id, first_name, last_name, start_date?, term_ends_on?}], vacant_position_ids?)` brings a body's seat holders in line with its published roster.
 It defaults to `dry_run: true`: run it, show the user the plan per seat (confirm, fill, replace, vacate, unlisted), then run it with `dry_run: false`.
 Seats missing from the roster are left alone, never ended implicitly.
 
 `end_tenure(tenure_id, end_date, source_url)` records that someone left a seat; tenure ids come from `get_body_details`.
+
+`link_district_seats(parent_geoid, dry_run)` links a county board's or city council's "District N" seats to the district boundaries that elect them (the county's 5-digit or the city's 7-digit Census geoid, e.g. "0681554" for Vacaville). Dry run by default; fill only; at-large seats are left alone; needs the districts imported.
 
 Not an admin: seat each person with `create_entity(entity_type: "person", position_id, source_url)`, and report departures in the session summary for an admin to record.
 

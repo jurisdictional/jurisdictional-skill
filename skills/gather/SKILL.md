@@ -128,7 +128,7 @@ Keep any `task_id`; Step 6 closes them.
 Past Gold, `quality` names what's missing: agencies without phone, email or website.
 A district's tier is about its seats instead: Gold when every seat it elects has a current holder.
 
-**Show the stack as one table**, worst-covered first among the governments, with the single most useful gap for each:
+**Show the stack as one table**, worst-covered first among the governments, with the single most useful gap for each (this shows the format; every number comes from `get_coverage`):
 
 ```
 Your governments at 300 Hemlock St, Vacaville
@@ -144,6 +144,7 @@ Your governments at 300 Hemlock St, Vacaville
 
 **Districts** are covered by the seat they elect, linked to the district with `electing_jurisdiction_id` (see [tools.md](references/tools.md)).
 A district with no linked seat is a quick contribution: find the seat on its body (the Assembly, the Board of Supervisors), then link it; `get_coverage` gives the exact call.
+An admin can link a whole county board's or city council's district seats at once with `link_district_seats(parent_geoid)`, dry run first.
 For "who represents me", call `explore(focus: "people", jurisdiction_ids: [<the district layers>])`.
 
 Then recommend one gap, the lowest rung first, and say what it would change: "California has no services at all — adding the DMV and state tax services would take it from governed to served."
@@ -166,14 +167,16 @@ It renders the page in a real browser and returns the HTML.
 Don't use `WebFetch` for government sites — they block it (403, 503).
 Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL to `gather`.
 
-**If `gather` fails or returns too much**, ask the user for the page, with the exact URL — never "the departments page":
+**Check what came back before reading it.** Many government sites block automated fetches: an "Access Denied", "Request blocked" or captcha page arrives as ordinary HTML, not as an error. Treat it like an error.
+
+**If `gather` fails, is blocked, or returns too much**, ask the user for the page, with the exact URL — never "the departments page":
 - **Quick:** "Could you open https://www.cityofvacaville.gov/departments and paste the text?"
 - **Better:** "Right-click the main content → Inspect → right-click the `<main>` element → Copy → Copy outerHTML, and paste it here."
 
 This is a normal part of the workflow, not a failure.
 A value from a pasted page is cited with that page's URL, and the `notes` say "pasted by the user from their browser".
 
-**Work top-down**, filling the missing layer before going deeper: agencies, then bodies, positions, people, and meetings.
+**Within the rung, work top-down:** agencies before their services, a body before its seats, seats before the people in them, then meetings.
 **Services run alongside agencies** — as you list each agency, ask what a resident can do with it. See [references/services.md](references/services.md).
 
 At each layer look for names, types, URLs, descriptions, contact info and relationships.
@@ -188,14 +191,8 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
 - **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
-Present findings one layer at a time (all the agencies, then their services), and ask for corrections before continuing.
-
-Frame contributions around what the user brings:
-- **Local knowledge:** "You probably know things about your council that aren't online — want to correct what we have?"
-- **Research:** "The county has 8 agencies listed but most are bare. Want to fill in the details?"
-- **Meetings:** "We don't have meeting dates for your council. Want to add them, with agenda and video links?"
-- **Their own data:** "I have a spreadsheet of every zoning decision from last year" — work with whatever they bring.
-
+Corrections happen at the Step 4 review, so don't stop to ask for them here.
+If the user brings their own material — local knowledge, a spreadsheet, a document — work from that; it's cited as "user-provided" or by the document's URL.
 If you can't find something, leave it out and note it so someone else can fill the gap.
 
 ### Step 4: Review before submitting
@@ -207,18 +204,17 @@ For changes to an existing entity, one table per entity:
 ```
 Ready to submit for Vacaville Police Department (agency #1234):
 
-  Field        Current    Proposed                      Source
-  ─────        ───────    ────────                      ──────
-  phone        (empty)    707-449-5200                  cityofvacaville.gov/police
-  website_url  (empty)    cityofvacaville.gov/police    cityofvacaville.gov/police
-  description  (empty)    Primary law enforcement...    cityofvacaville.gov/police
-  email        police@…   police@… (corroborates)       cityofvacaville.gov/contact
-
+  Field        Current    Proposed                      Source                        Lands
+  ─────        ───────    ────────                      ──────                        ─────
+  phone        (empty)    707-449-5200                  cityofvacaville.gov/police    review
+  website_url  (empty)    cityofvacaville.gov/police    cityofvacaville.gov/police    review
+  description  (empty)    Primary law enforcement...    cityofvacaville.gov/police    review
+  email        police@…   police@… (same)               cityofvacaville.gov/contact   corroborates
 ```
 
 Ask with `AskUserQuestion`: "Submit all 4", "Let me change some", "Skip this one".
 
-Say which kind of write each row is, because they behave differently:
+The **Lands** column says what each write does, because they behave differently:
 - **New entity** (`create_entity`, `import_jurisdiction`): live immediately, with no review. Be most careful here.
 - **Change to an existing field** (`propose_change`): queued for human review.
 - **Same value from a new source**: recorded as corroboration, no review.
@@ -281,12 +277,13 @@ Jurisdiction (exists, from the juricode)
 **`source_url` is the citation; live links are separate.** Pass the page you read as `source_url`, the agency's own page as `website_url`, and the service's action link as `online_url` — never the list page where you found them.
 Both links are live with no review.
 
-**Two modes.** The user can approve each entity, or say "fill in everything you can find" — then research and submit fully, and show every `change_id` and URL in the summary at the end.
+**Two modes.** The user can approve each layer, or say "fill in everything you can find" — then research and submit fully, and show every `change_id` and URL in the summary at the end.
 Even then, run `import_jurisdiction` and `reconcile_roster` as dry runs first, and show the result before writing.
 
 ### Step 6: Verify and close the loop
 
-**After each entity, re-query it** (`get_agency_details`, `get_service_details`, `get_body_details`, `get_person_details`).
+**After each `create_entity` or `propose_change`, re-query the entity** (`get_agency_details`, `get_service_details`, `get_body_details`, `get_person_details`).
+After `import_jurisdiction`, read the result's status per `ref` instead, and re-query only what looks wrong.
 Detail responses list each field's sources and corroboration count, so the re-query shows whether your claim landed.
 Check `online_url` on services and `website_url` on agencies specifically.
 Use `get_change_status(change_ids: [...])` to see whether a proposal is pending, approved, published or rejected.
@@ -345,8 +342,6 @@ In this order:
 
 Offer two or three with `AskUserQuestion`, each with its rung and population ("San Diego — governed, 1.4M people, 0 services"), plus "Stop here".
 
-**Local files are optional.** If the user wants a local record, write JSON per [schema.md](schema.md). The submission is the API call, not the file.
-
 ## Guidelines
 
 - **Provenance over completeness.** A record with a source URL can be trusted, challenged and updated; one without is a guess. Submit fewer fields rather than unsourced ones.
@@ -362,3 +357,4 @@ Offer two or three with `AskUserQuestion`, each with its rung and population ("S
 - **Source hierarchy.** The government's own site (via `gather`) first; then other official sites (a state municipal league, the county); then news; then the user's local knowledge, attributed as "user-provided". Search snippets and training data are never sources.
 - **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them, and ask where it's published.
 - **Be incremental.** Five verified agencies are worth more than thirty unverified ones.
+- **Local files are optional.** If the user wants a local record, write JSON per [schema.md](schema.md). The submission is the API call, not the file.
