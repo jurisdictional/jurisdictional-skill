@@ -124,7 +124,7 @@ Bodies have no `description` field.
 ```
 
 There is no `image` field.
-Officials' photos go through the review queue with the `submit_portrait_candidate` MCP tool instead.
+Officials' photos go through the review queue with the `submit_image` MCP tool instead.
 
 ### Position File
 

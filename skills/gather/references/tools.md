@@ -8,8 +8,8 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | Access | Tools |
 |---|---|
 | **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
-| **Signed in** | `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_portrait_candidate`, `submit_jurisdiction_image_candidate`, `get_image_candidate` |
-| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image_candidate`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
+| **Signed in** | `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
+| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
 No token: 100 requests a day per IP (live since 2026-10-26), shared by everyone behind that address; one address's Step 2 costs about 10.
@@ -45,10 +45,11 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 
 Signed in only.
 Renders the page in a headless browser and returns its HTML.
+Where the server has a Common Crawl copy of the page, it returns that first, headed with its crawl and capture date; `live: true` skips it and fetches now (use it for rosters and people).
 Allowed: `.gov`, `.mil`, `.us`, `.com`, `.org`, `.net`, plus granicus.com, legistar.com and escribemeetings.com.
 A call gives up after 60 seconds.
 
-When it fails, ask the user for the page (SKILL.md Step 3) rather than retrying:
+When it fails, fall back as in SKILL.md Step 3 (a connected browser, then the user's paste) rather than retrying:
 - **`Error: gather timed out`** or **`Error: gather empty render`** (a JavaScript-only site): the error says to ask the user to paste.
 - **`Error: Domain not allowed`**: off the allowlist.
 - **An "Access Denied" page returned as content**: the site's firewall blocks the fetcher (cityofvacaville.gov did on 2026-10-26). It is not an error, so read what came back before using it.
@@ -131,22 +132,23 @@ Seats missing from the roster are left alone, never ended implicitly.
 
 Not an admin: seat each person with `create_entity(entity_type: "person", position_id, source_url)`, and report departures in the session summary for an admin to record.
 
-### Images: `submit_portrait_candidate`, `submit_jurisdiction_image_candidate`
+### Images: `submit_image`
 
-Officials' photos and city logos and flags go into a private review queue, never straight onto a page.
+Officials' photos and a city's seal, logo or flag go into a private review queue, never straight onto a page.
+A seal is the government's official emblem; a logo is its branding.
 Only submit an image you saw on a page you fetched with `gather` — never one from search results.
 
 ```
-submit_portrait_candidate(person_id: 400, source_url: "<image file URL>",
+submit_image(person_id: 400, source_url: "<image file URL>",
   source_page_url: "<the page it appeared on>", discovered_at: "2026-10-23T18:04:05Z",
   alt_text: "<the img alt, verbatim>", caption: "<nearby caption, verbatim>")
 
-submit_jurisdiction_image_candidate(jurisdiction_id: 70118, kind: "logo" | "flag", source_url, source_page_url, discovered_at)
+submit_image(jurisdiction_id: 70118, kind: "seal" | "logo" | "flag", source_url, source_page_url, discovered_at)
 ```
 
-`get_image_candidate(image_id)` shows its review status: `fetched` with `original_stored: true` means it is ready for review; `failed` with HTTP 403 means the host blocks our server, so resubmit with the bytes your browser received (`image_base64` + `image_sha256`).
+`get_image(image_id)` shows its review status: `fetched` with `original_stored: true` means it is ready for review; `failed` with HTTP 403 means the host blocks our server, so resubmit with the bytes your browser received (`image_base64` + `image_sha256`).
 
-**Admin: approve in the same session** with `approve_image_candidate(image_id, license, license_evidence, attribution?)`.
+**Admin: approve in the same session** with `approve_image(image_id, license, license_evidence, attribution?)`.
 Look at the image first (one face, the right person).
 The license follows from where the photo was published:
 

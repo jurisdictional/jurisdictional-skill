@@ -3,7 +3,7 @@ name: gather
 description: Explore the governments that serve an address on jurisdictional.org — agencies, councils, officials, services, meetings — and contribute sourced civic data to fill the gaps. Use when the user runs /gather with an address or a city and state.
 disable-model-invocation: true
 user-invocable: true
-allowed-tools: WebSearch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, mcp__plugin_jurisdictional_jurisdictional__set_location, mcp__plugin_jurisdictional_jurisdictional__explore, mcp__plugin_jurisdictional_jurisdictional__search_jurisdictions, mcp__plugin_jurisdictional_jurisdictional__search_agencies, mcp__plugin_jurisdictional_jurisdictional__search_services, mcp__plugin_jurisdictional_jurisdictional__search_people, mcp__plugin_jurisdictional_jurisdictional__search_bodies, mcp__plugin_jurisdictional_jurisdictional__search_positions, mcp__plugin_jurisdictional_jurisdictional__get_jurisdiction_details, mcp__plugin_jurisdictional_jurisdictional__get_agency_details, mcp__plugin_jurisdictional_jurisdictional__get_service_details, mcp__plugin_jurisdictional_jurisdictional__get_person_details, mcp__plugin_jurisdictional_jurisdictional__get_body_details, mcp__plugin_jurisdictional_jurisdictional__find_jurisdictions_at_point, mcp__plugin_jurisdictional_jurisdictional__find_agencies_near_point, mcp__plugin_jurisdictional_jurisdictional__find_services_near_point, mcp__plugin_jurisdictional_jurisdictional__get_coverage, mcp__plugin_jurisdictional_jurisdictional__get_pending_tasks, mcp__plugin_jurisdictional_jurisdictional__get_next_uncovered, mcp__plugin_jurisdictional_jurisdictional__gather, mcp__plugin_jurisdictional_jurisdictional__get_change_status, mcp__plugin_jurisdictional_jurisdictional__get_image_candidate
+allowed-tools: WebSearch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, mcp__plugin_jurisdictional_jurisdictional__set_location, mcp__plugin_jurisdictional_jurisdictional__explore, mcp__plugin_jurisdictional_jurisdictional__search_jurisdictions, mcp__plugin_jurisdictional_jurisdictional__search_agencies, mcp__plugin_jurisdictional_jurisdictional__search_services, mcp__plugin_jurisdictional_jurisdictional__search_people, mcp__plugin_jurisdictional_jurisdictional__search_bodies, mcp__plugin_jurisdictional_jurisdictional__search_positions, mcp__plugin_jurisdictional_jurisdictional__get_jurisdiction_details, mcp__plugin_jurisdictional_jurisdictional__get_agency_details, mcp__plugin_jurisdictional_jurisdictional__get_service_details, mcp__plugin_jurisdictional_jurisdictional__get_person_details, mcp__plugin_jurisdictional_jurisdictional__get_body_details, mcp__plugin_jurisdictional_jurisdictional__find_jurisdictions_at_point, mcp__plugin_jurisdictional_jurisdictional__find_agencies_near_point, mcp__plugin_jurisdictional_jurisdictional__find_services_near_point, mcp__plugin_jurisdictional_jurisdictional__get_coverage, mcp__plugin_jurisdictional_jurisdictional__get_pending_tasks, mcp__plugin_jurisdictional_jurisdictional__get_next_uncovered, mcp__plugin_jurisdictional_jurisdictional__gather, mcp__plugin_jurisdictional_jurisdictional__get_change_status, mcp__plugin_jurisdictional_jurisdictional__get_image
 argument-hint: [address | city, state | next [state]]
 ---
 
@@ -30,7 +30,7 @@ The user has local knowledge you don't — defer to them on what's accurate.
 Every fact submitted must trace back to a page someone can open and check.
 Data without a source is opinion. Data with a source is evidence.
 
-- **Values come from pages you fetched with `gather`, an archived capture of the government's own page (`mcc_read`, cited with its capture date), or the user.** Nothing else.
+- **Values come from the government's own page**, read with `gather`, from an archived capture (`mcc_read`, or `gather`'s archived copy, cited with its capture date), in the user's browser, or pasted by the user — **or from the user's own knowledge.** Nothing else.
 - **`WebSearch` finds URLs; it is never a source of values.** Search snippets are not the page: a snippet can be stale, truncated or from another city. Find the URL, then `gather` it and read the value there.
 - **Never use training data as a source.** Departments get reorganized, officials leave, numbers change. Training knowledge may guide research ("this city probably has a Parks department — let me look"), but the submitted value must come from the page you find. If you think you know something but can't find it, say so: "I think the police number is X, but I can't find it on their site — can you check?"
 - **An empty field is better than an unsourced one.**
@@ -166,6 +166,7 @@ gather(url: "https://www.cityofvacaville.gov/departments")
 ```
 
 It renders the page in a real browser and returns the HTML.
+Where the server has a Common Crawl copy, `gather` returns that first, headed with its crawl and capture date: cite it as an archived capture (below). For rosters and people, pass `live: true` for a fresh fetch.
 Don't use `WebFetch` for government sites — they block it (403, 503).
 Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL to `gather`.
 
@@ -179,12 +180,17 @@ Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL 
 
 **Check what came back before reading it.** Many government sites block automated fetches: an "Access Denied", "Request blocked" or captcha page arrives as ordinary HTML, not as an error. Treat it like an error.
 
-**If `gather` fails, is blocked, or returns too much**, ask the user for the page, with the exact URL — never "the departments page":
-- **Quick:** "Could you open https://www.cityofvacaville.gov/departments and paste the text?"
-- **Better:** "Right-click the main content → Inspect → right-click the `<main>` element → Copy → Copy outerHTML, and paste it here."
+**If `gather` fails, is blocked, or returns too much**, try in this order. This is a normal part of the workflow, not a failure.
 
-This is a normal part of the workflow, not a failure.
-A value from a pasted page is cited with that page's URL, and the `notes` say "pasted by the user from their browser".
+1. **A browser, if one is connected:** Claude in Chrome (`mcp__claude-in-chrome__*`) or the desktop app's browser (`mcp__Claude_Browser__*`). Load that browser's skill first, open the exact URL in a new tab, and read the page text. It loads as the user's own browser, which most firewalls let through.
+   Cite the page URL as `source_url`, with `notes`: "captured in the user's browser, <date>". For a headshot the server can't download, send the bytes the browser received (`image_base64`, `image_sha256`; see [tools.md](references/tools.md)).
+2. **Otherwise ask the user for the page**, with the exact URL — never "the departments page":
+   - **Quick:** "Could you open https://www.cityofvacaville.gov/departments and paste the text?"
+   - **Better:** "Right-click the main content → Inspect → right-click the `<main>` element → Copy → Copy outerHTML, and paste it here."
+
+   A value from a pasted page is cited with that page's URL, and the `notes` say "pasted by the user from their browser".
+
+Check a browser capture or a paste for a block page too, the same way.
 
 **Within the rung, work top-down:** agencies before their services, a body before its seats, seats before the people in them, then meetings.
 **Services run alongside agencies** — as you list each agency, ask what a resident can do with it. See [references/services.md](references/services.md).
@@ -260,7 +266,7 @@ The same goes for `search_bodies`, `search_services`, `search_positions` (by `bo
 | A whole roster changed (admin) | `reconcile_roster` — dry run first, show the plan, then apply |
 | Someone left a seat (admin) | `end_tenure` with the page that shows it; otherwise note it for an admin |
 | A meeting or agenda item | `create_entity(entity_type: "meeting", body_id, start_time, agenda_url, minutes_url, video_url)` |
-| A headshot, logo or flag | `submit_portrait_candidate` / `submit_jurisdiction_image_candidate` (private review queue) |
+| An official's photo, or a seal, logo or flag | `submit_image` (private review queue) |
 
 **Create top-down.** Each `create_entity` returns an id you need for the next layer:
 
@@ -310,8 +316,8 @@ Use `get_change_status(change_ids: [...])` to see whether a proposal is pending,
   Jurisdiction:   https://jurisdictional.org/jurisdictions/70118
 ```
 
-**Submit images** you noted in Step 3 with `submit_portrait_candidate` or `submit_jurisdiction_image_candidate`, one per matched holder; they appear publicly only after review.
-If you are an admin, review them in the same session with `approve_image_candidate`, using the license rule in [tools.md](references/tools.md): the goal is photos showing, not a queue.
+**Submit images** you noted in Step 3 with `submit_image` (`person_id` for an official, or `jurisdiction_id` and `kind` for a seal, logo or flag), one per matched holder; they appear publicly only after review.
+If you are an admin, review them in the same session with `approve_image`, using the license rule in [tools.md](references/tools.md): the goal is photos showing, not a queue.
 Re-query the body afterwards: each approved holder's `image` is no longer null.
 
 **Close the sourcing tasks** from Step 2 with `submit_sourcing_result` — `status: "success"`, `"partial"` or `"failed"` with a `failure_reason`.
