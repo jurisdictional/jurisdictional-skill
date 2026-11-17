@@ -175,6 +175,7 @@ Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL 
 2. Find the page, don't guess its URL: `mcc_find(site, "City Council")`, or `mcc_pages(site, path: "/departments/fire")`.
    For an agency's contacts, use the department's own landing page (lowest `depth`); a sub-page's phone belongs to the sub-unit.
 3. `mcc_read(url, around: "Phone:")` for a contact block, or `format: "images"` for headshots (src, srcset, alt and caption).
+   `mcc_social(site, tier: "other")` lists the site's social accounts beyond its site-wide ones (those are imported in bulk), each with sample pages to own it by.
 4. Cite the page's own URL as `source_url`, and put the capture date in `notes` ("Common Crawl capture, CC-MAIN-2026-39, 2026-09-15").
    People and rosters change: if the capture is more than a few months old, confirm them with a live `gather`.
 
@@ -209,6 +210,8 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
 - **Social accounts, every layer:** take the official X, Facebook, Instagram, YouTube and LinkedIn links a page shows, and write each with `create_entity` (`entity_type: "social_account"`, `url` as the page gives it, `source_url` the page, `jurisdiction_id`).
   The owner follows the page: a site-wide header or footer link is the government's (no owner); a department page's link is that agency's (`agency_id`); a council page's is the body's (`body_id`); an officeholder's bio page gives `person_id` for their own account, or `position_id` for an office account that passes holder to holder (@MayorOf…).
   Official accounts only: skip vendors, foundations, campaigns and personal accounts, and share, intent or post links.
+  With `mcc_social`, own each account by its sample page, read that page with `mcc_read`, and seat-check a bio page's person first.
+  An account in a department subdomain's chrome (`hosts` only police.example.gov) is that agency's, even when its tier is core.
   A new account is suggested and reviewed before it shows.
 - **Officials:** read the roster page; note start dates and term ends only when published.
 - **Photos, every time:** whenever a page you fetched shows officials (a roster, a bio, a board page), take each matched holder's headshot from the same HTML: the `<img>` whose alt, caption or file name carries the person's name, or the one nearest their name, never from the header, nav, footer or a slider.
