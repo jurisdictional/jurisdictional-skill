@@ -23,8 +23,17 @@ Start a new session, then:
 
 Already contributing? `/gather next CA` skips the address and picks the most useful place in California to work on next.
 
-The plugin connects Claude to the Jurisdictional MCP server at `https://jurisdictional.org/api/mcp/message`.
-To use the server without the skill: `claude mcp add --transport http jurisdictional https://jurisdictional.org/api/mcp/message`.
+The plugin connects Claude to the Jurisdictional MCP server at `https://jurisdictional.org/mcp`.
+To use the server without the skill: `claude mcp add --transport http jurisdictional https://jurisdictional.org/mcp`.
+
+### Other assistants
+
+The same server works from Grok: as a custom connector on grok.com, with `grok mcp add --transport http jurisdictional https://jurisdictional.org/mcp` in Grok Build, or as a remote MCP tool in the xAI API.
+xAI's docs say Grok Build also reads Claude Code marketplaces, plugins and skills.
+Per-assistant steps, with sign-in, are at [jurisdictional.org/skill](https://jurisdictional.org/skill).
+
+Privacy: [jurisdictional.org/privacy](https://jurisdictional.org/privacy).
+Support: [jurisdictional.org/support](https://jurisdictional.org/support).
 
 ## Usage
 

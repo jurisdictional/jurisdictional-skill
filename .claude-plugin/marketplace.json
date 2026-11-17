@@ -2,8 +2,8 @@
   "name": "jurisdictional",
   "description": "Civic data plugins from jurisdictional.org",
   "owner": {
-    "name": "Jurisdictional",
-    "url": "https://jurisdictional.org"
+    "name": "Civic Studio",
+    "url": "https://civic.studio"
   },
   "plugins": [
     {

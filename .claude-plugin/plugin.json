@@ -3,11 +3,19 @@
   "version": "0.5.0",
   "description": "Connect to your local government — explore agencies, services, and officials, and contribute civic data to jurisdictional.org",
   "author": {
-    "name": "Jurisdictional",
-    "url": "https://jurisdictional.org"
+    "name": "Civic Studio",
+    "url": "https://civic.studio"
   },
   "homepage": "https://jurisdictional.org",
   "repository": "https://github.com/jurisdictional/jurisdictional-skill",
+  "documentationUrl": "https://jurisdictional.org/skill",
+  "supportUrl": "https://jurisdictional.org/support",
+  "privacyPolicyUrl": "https://jurisdictional.org/privacy",
   "license": "MIT",
-  "keywords": ["civic", "government", "open-data", "jurisdictions"]
+  "keywords": [
+    "civic",
+    "government",
+    "open-data",
+    "jurisdictions"
+  ]
 }

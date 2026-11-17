@@ -2,7 +2,7 @@
   "mcpServers": {
     "jurisdictional": {
       "type": "http",
-      "url": "https://jurisdictional.org/api/mcp/message",
+      "url": "https://jurisdictional.org/mcp",
       "headersHelper": "${CLAUDE_PLUGIN_ROOT}/bin/jurisdictional-headers.sh"
     }
   }
