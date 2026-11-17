@@ -162,6 +162,24 @@ Officials' photos go through the review queue with the `submit_image` MCP tool i
 }
 ```
 
+### Pages
+
+Website pages by what they are for (meetings, budget, FOIA…) have no local file format; record them with the MCP tool:
+
+```json
+{
+  "entity_type": "page",
+  "jurisdiction_id": 70118,
+  "kind": "meetings",
+  "url": "https://pub-vacaville.escribemeetings.com/",
+  "source_url": "https://pub-vacaville.escribemeetings.com/",
+  "source_key": "vendor_platforms"
+}
+```
+
+`kind`, `url`, `source_url` and `jurisdiction_id` are required; add `agency_id` or `body_id` when that agency or body owns the page.
+The kind list grows; see `create_entity` page in [references/tools.md](references/tools.md).
+
 ## Field Mapping: Data Repo → App Schema
 
 Some data repo fields differ from the app's database schema.

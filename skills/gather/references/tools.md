@@ -39,6 +39,7 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 - `explore(focus: "people", jurisdiction_ids)` also returns whoever holds the seats those jurisdictions elect, so passing the district layers from `set_location` answers "who represents me". There is no `positions` focus.
 - `search_people(query)` matches first, last or full name, ignoring case and accents. A middle initial stored in the first name ("Jane Q.") breaks a full-name match, so if "Jane Doe" finds nothing, search "Doe" and filter by jurisdiction before creating anyone.
 - `get_*_details` return each field's sources and a corroboration count.
+  Jurisdiction, agency and body details also return `pages: [{id, kind, url}]`.
 - `search_places(query, place_type?, jurisdiction_ids?, limit?)` finds parks, libraries, schools and community centers by name, description or city.
 - Duplicate agencies are being merged: an agency id from an earlier session may stop resolving. Search by name again rather than reusing it.
 
@@ -79,7 +80,7 @@ propose_change(entity_type: "agency", entity_id: 1234, field_name: "phone",
 
 - `source_url` is required: the http(s) page where the value was read. A proposal without one is refused.
 - Creates a **pending** change for human review, and returns its `change_id` and a URL.
-- `entity_type`: jurisdiction, agency, body, service, position, person.
+- `entity_type`: jurisdiction, agency, body, service, position, person, page (a page takes `field_name` `url` or `kind`).
 - `field_name` must be a real field; a wrong name fails and lists the valid ones.
   Agency URL is `website_url`; service URL is `online_url`.
 - **Corroboration:** proposing a field's *current* value with a new `source_url` is recorded as an applied, corroborating claim (status `corroborated`, no review).
@@ -120,6 +121,7 @@ Every field set on the new row is recorded as a claim citing `source_url`, and i
 | person | `jurisdiction_id`; `position_id` to seat them | Use `first_name`/`last_name` exactly as published. With `position_id`, a tenure is created and **`source_url` is required** (the roster or bio page). `start_date` and `term_ends_on` only when the source publishes them. Re-creating a person who already holds the seat refreshes that tenure's source instead of adding a second one. |
 | meeting | `jurisdiction_id`, `body_id`, `start_time` | `agenda_url`, `minutes_url`, `video_url`, `status` (scheduled, completed, cancelled, postponed), `external_id` (eScribe GUID, Granicus clip id). |
 | agenda_item | `jurisdiction_id`, `meeting_id` | |
+| page | `jurisdiction_id`, `kind`, `url`, `source_url` | No `name`. A government website page by what it is for. `kind` today: meetings, agendas, minutes, budget, financial_report (ACFR, CAFR, audits), municipal_code, open_data (a portal people browse), data_json (the DCAT-US catalog at /data.json), about, open, foia, privacy, accessibility, vulnerability_disclosure, no_fear_act, inspector_general, digital_strategy; the list grows, and an unknown kind is an error naming the valid ones. Add `agency_id` (a department's own FOIA or budget page) or `body_id` (a council's own minutes page), one of them and in that jurisdiction; without either, the jurisdiction owns it. `source_url` is the page you read, usually the page itself. A page on a vendor host (eScribe, Granicus, Legistar) takes `source_key: "vendor_platforms"`. One page serving two kinds is two calls; the same owner, kind and url returns `duplicate: true`, so re-runs are safe. `jurisdictions.budget_url` moved here as kind `budget`. |
 | place | `jurisdiction_id`, `place_type`, `name`, `source_url` | `place_type`: park, library, school, community_center. Optional `managing_agency_id`, `website_url`, `street_address`, `city`, `state`, `zip_code`, `phone`, `latitude`, `longitude`, `description`. The same name and type in the jurisdiction returns the existing place with `duplicate: true`. |
 
 `source_key` names the source's registry entry, default `municipal_official_sites` (a government's own site).

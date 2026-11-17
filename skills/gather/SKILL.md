@@ -226,6 +226,10 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   City logos and flags on a page you fetched are noted the same way.
   All of them are submitted in Step 6.
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
+- **Website pages, every layer:** record each page kind the site has: the meetings calendar, agendas, minutes, adopted budget, ACFR or audit (`financial_report`), municipal code, open data portal and `/data.json`; for federal agencies also about, `/open`, FOIA, privacy, accessibility, vulnerability disclosure, No FEAR Act and inspector general.
+  Open each page and confirm it is that page before recording it, then write one `create_entity` (`entity_type: "page"`) per kind; see [tools.md](references/tools.md).
+  The kind list grows, so read an unknown-kind error for the current list rather than guessing.
+  A body keeps its own `meeting_url`; a jurisdiction-wide meetings portal is a `meetings` page on the jurisdiction.
 - **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
 Corrections happen at the Step 4 review, so don't stop to ask for them here.
@@ -288,6 +292,7 @@ The same goes for `search_bodies`, `search_services`, `search_positions` (by `bo
 | A whole roster changed (admin) | `reconcile_roster` — dry run first, show the plan, then apply |
 | Someone left a seat (admin) | `end_tenure` with the page that shows it; otherwise note it for an admin |
 | A meeting or agenda item | `create_entity(entity_type: "meeting", body_id, start_time, agenda_url, minutes_url, video_url)` |
+| A website page by what it is for (meetings, budget, FOIA…) | `create_entity(entity_type: "page", kind, url, source_url, jurisdiction_id, agency_id? or body_id?)`, once per kind |
 | An official's photo, or a seal, logo or flag | `submit_image` (private review queue) |
 
 **Create top-down.** Each `create_entity` returns an id you need for the next layer:
