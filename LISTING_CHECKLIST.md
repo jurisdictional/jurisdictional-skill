@@ -43,7 +43,7 @@ Never describe it as CC0.
 - `README.md`: an "Other assistants" note for Grok, plus Privacy and Support links.
 - `/skill` on jurisdictional.org: per-assistant connect and sign-in steps for Claude Code, Grok and any MCP client, and a design pass. Two commits in the jurisdictional worktree, not yet pushed.
 - Validator after these changes: `claude plugin validate .` passes; `--strict` fails only on the root `CLAUDE.md` warning, which is expected per `TESTING.md`.
-- Icon (2026-11-12): `.claude-plugin/icon.png`, 1024 × 1024 PNG, a white building (dome, flag, colonnade, steps) on blue-600, rendered from `priv/static/images/jurisdictional-icon.svg` in the jurisdictional repo; it fits inside a circle, so a round mask keeps it whole. Ryan to approve before the first portal save.
+- Icon (2026-11-16): `.claude-plugin/icon.png`, 1024 × 1024 PNG with a transparent background: Jurisdictional's blue circle badge, upscaled (Lanczos) from the only source, `priv/static/images/jurisdictional-logo.png` (200 × 200) in the jurisdictional repo. It's slightly soft up close; swap in an export from the original vector if one turns up, before the first portal save fixes the listing icon.
 - Tool titles (2026-11-12): every tool in `tools/list` carries `title`, top-level and in its annotations (jurisdictional commit 2a97b93).
 - Publisher (2026-11-12, Ryan): Civic Studio is the maker and publisher; Jurisdictional is the app and publishes the data. `author` and marketplace `owner` are Civic Studio (https://civic.studio); the plugin keeps the name `jurisdictional`.
 

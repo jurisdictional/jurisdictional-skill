@@ -87,9 +87,9 @@ Claude Code stores and refreshes the sign-in for you.
 ### Other MCP clients
 
 A client without browser sign-in can send a token instead.
-Copy one from [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli) and configure your client to send it as an `Authorization: Bearer jur_...` header to `https://jurisdictional.org/mcp`.
+Copy one from [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli) and configure your client to send it as an `Authorization: Bearer YOUR_API_KEY` header, with your token in place of `YOUR_API_KEY`, to `https://jurisdictional.org/mcp`.
 A configured header takes precedence over the browser sign-in, so remove it if you switch.
-Earlier versions of this plugin read `~/.jurisdictional/token`; this version doesn't, and you can delete that file.
+Earlier versions of this plugin read a saved token file; this version signs in through the browser and no longer reads it, so you can delete that file.
 
 ## What you can contribute
 
