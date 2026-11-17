@@ -8,7 +8,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | Access | Tools |
 |---|---|
 | **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
-| **Signed in** | `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
+| **Signed in** | `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
@@ -73,6 +73,25 @@ propose_change(entity_type: "agency", entity_id: 1234, field_name: "phone",
   Corroboration counts independent sources by host, so a second site confirming a value is a real contribution.
 - `agency_type` values are checked; see [schema.md](../schema.md).
 
+### `propose_changes` — many fields read on one page
+
+```
+propose_changes(source_url: "https://www.kenosha.org/government/common-council",
+                changes: [{entity_type: "person", entity_id: 92921, field_name: "phone", new_value: "262-653-4000"},
+                          {entity_type: "person", entity_id: 92921, field_name: "email", new_value: "district1@kenosha.org"}])
+```
+
+- Up to 50 items, each `{entity_type, entity_id, field_name, new_value, notes?}`, all citing the one `source_url` (and `source_key`, `capture`, `notes`).
+- Each item is recorded exactly as `propose_change` records it: pending, or corroborated when it is already the value.
+- The response lists every item by `index` with its `change_id` and `status`, or its `error`; a failed item never blocks the others, so fix and resend only the failures.
+
+### `capture` — the page as the user's browser received it
+
+When the server cannot fetch `source_url` and the page was read in the user's browser (or pasted), pass it as `capture` on `propose_change`, `propose_changes`, `create_entity` or `import_jurisdiction`:
+`{html_base64 | text, sha256, captured_at, via: "browser" | "paste"}`, exactly one of `html_base64` or `text`, `sha256` of the decoded bytes in lowercase hex.
+It is kept privately as evidence and shown to reviewers beside each claim; the same page sent again is stored once.
+A bad shape or a mismatched `sha256` fails the call, and nothing is written.
+
 ### `create_entity` — one new entity
 
 Always search first (`search_agencies`, `search_bodies`, `search_services`, `search_people`, `search_positions`).
@@ -114,7 +133,7 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
   Body: name, description, legislative_type, url, source, meeting_url, phone, email, address.
   A person's office phone and official email go on the person with `propose_change` (field_name `phone` or `email`).
 - Feedback (`send_feedback`, signed in): message (exactly as the person approved it), sentiment (positive, neutral, negative), actor (human, agent), feature_areas, optional context and entity_type with entity_id. Stored with the account for the team, never published; returns `feedback_id`.
-- Social account (`create_entity`, `entity_type: "social_account"`): url, source_url (required), jurisdiction_id, and at most one owner: person_id, position_id, body_id or agency_id; none means the government's own account.
+- Social account (`create_entity`, `entity_type: "social_account"`): url (X, Facebook, Instagram, YouTube, LinkedIn, or a Nextdoor agency page `nextdoor.com/agency-detail/<state>/<city>/<agency>/`; Nextdoor profiles, posts and invites are refused), source_url (required), jurisdiction_id, and at most one owner: person_id, position_id, body_id or agency_id; none means the government's own account.
   Details tools list confirmed accounts as `social_accounts: [{id, platform, handle, url, status}]`.
   Service: name, description, service_type, online_url, eligibility_requirements, cost, contact_info.
 - Each created row gets one claim per field set, citing the item's own `source_url`, or the top-level `source_url` for items without one; `counts.claims` reports how many.
