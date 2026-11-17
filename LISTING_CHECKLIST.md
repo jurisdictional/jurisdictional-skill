@@ -69,7 +69,7 @@ MCP connector, after steps 3 and 4:
    - confirmation that you ran every tool yourself through MCP Inspector or as a custom connector;
    - the seven compliance acknowledgements and the Anthropic Software Directory Terms and Policy: https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy
    - The listing starts as Community; Anthropic may escalate to Verified. Escalations: mcp-review@anthropic.com. Verification doc: https://claude.com/docs/connectors/verification
-8. **Terms of service.** https://jurisdictional.org/terms is 404. The connector submission lists documentation, privacy, support and icon as required; whether a terms URL is required is **unverified**. `termsOfServiceUrl` is an optional `plugin.json` field. Write `/terms` before submitting if you want it on the listing.
+8. **Terms of service.** `termsOfServiceUrl` in `plugin.json` is set to https://jurisdictional.org/terms (2026-11-16), which is still 404; the page is handed off to jurisdictional and must be live before submitting. The connector submission lists documentation, privacy, support and icon as required; whether a terms URL is required is **unverified**. `termsOfServiceUrl` is an optional `plugin.json` field. Write `/terms` before submitting if you want it on the listing.
 9. **Privacy policy content.** Confirm https://jurisdictional.org/privacy states what the API logs (`api_requests` keeps IP and user agent) and the retention period; the connector checklist asks for collection, use, retention and contact.
 10. **Publisher identity (D5): decided.** Civic Studio publishes; Jurisdictional is the product. Still open: which GitHub org hosts the plugin repo.
 
