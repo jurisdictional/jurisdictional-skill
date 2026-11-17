@@ -88,7 +88,7 @@ If the user added the server by hand with an `Authorization` header, that header
 
 If the user provided arguments, use them: `$ARGUMENTS`
 
-- **`next`** (`/gather next`, `/gather next CA`): skip the address. Pick a target as in [Choosing a next target](#choosing-a-next-target) (in the given state, or ask which), then go to Step 2 for it.
+- **`next`** (`/gather next`, `/gather next CA`): skip the address. Claim targets with `claim_work` as in [Choosing a next target](#choosing-a-next-target) (in the given state, or ask which), then go to Step 2 for the one the user picks.
 - **No arguments:** ask for an address or a city and state.
 
 1. Call `set_location` with their address or city.
@@ -339,6 +339,8 @@ Use `get_change_status(change_ids: [...])` to see whether a proposal is pending,
 If you are an admin, review them in the same session with `approve_image`, using the license rule in [tools.md](references/tools.md): the goal is photos showing, not a queue.
 Re-query the body afterwards: each approved holder's `image` is no longer null.
 
+**Release unfinished leases.** A write that fills a claimed target ends its lease on its own; call `release_work(lease_ids)` for every target this session claimed and won't finish, so someone else can take it now rather than in 8 hours.
+
 **Close the sourcing tasks** from Step 2 with `submit_sourcing_result` — `status: "success"`, `"partial"` or `"failed"` with a `failure_reason`.
 If you already submitted the values, pass `data: {}` so they aren't proposed twice.
 
@@ -377,10 +379,15 @@ If they pick one, continue at Step 2 for it — no new preflight or location.
 In this order:
 
 1. **Another government at this address** below `served` or below Gold, from Step 2's table. The user lives there, so the gap is theirs.
-2. **The biggest places in the state that are partly covered:** `get_next_uncovered(state: "CA", level: "place", coverage: "governed", limit: 5)` (no services yet), then `coverage: "agencies"` (no council). Results come largest first: Los Angeles with no services matters more than a village with none.
-3. **Places with nothing yet:** `coverage: "none"` (only places with a government; empty once a state has none left).
+2. **Claimed work.** Anywhere else, pick targets with `claim_work` rather than from a list, so no one else is handed the same gap: `claim_work(kind: "no_agencies", state: "CA", n: 3)` gives the largest places and counties with no agencies yet.
+   The other kinds are `jurisdiction_website_missing`, `agency_phone_missing` and `statewide_seat_unlinked`.
+   Each target is leased to the user for 8 hours and carries a `lease_id` and a `hint` naming the write that fills it (`propose_change phone`); that write ends the lease on its own.
+   Once the user picks one, `release_work` the leases on the others straight away.
+   `claim_work` needs sign-in; if the user isn't signed in, offer it, as in the preflight.
+3. **Where the state stands**, for orientation only: `get_next_uncovered(state: "CA", level: "place", coverage: "governed", limit: 5)` shows the biggest places with no services yet, and `coverage: "agencies"` those with no council.
+   It leases nothing and hands every caller the same rows, so prefer a claimed target when both fit.
 
-Offer two or three with `AskUserQuestion`, each with its rung and population ("San Diego — governed, 1.4M people, 0 services"), plus "Send this feedback" and "Stop here".
+Offer two or three with `AskUserQuestion`, each with what it's missing ("<name>, <state> — no agencies yet"; "San Diego — governed, 1.4M people, 0 services"), plus "Send this feedback" and "Stop here".
 
 ## Guidelines
 

@@ -1,6 +1,6 @@
 # Jurisdictional MCP tools — what each one does when contributing
 
-Read 2026-10-26 from the live `tools/list` and the server code.
+Read 2026-10-26 from the live `tools/list` and the server code; claim_work and release_work added 2026-11-17.
 The tool list itself is the source of truth: if a schema here disagrees with the one Claude sees, the live schema wins.
 
 ## Who sees what
@@ -8,7 +8,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | Access | Tools |
 |---|---|
 | **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
-| **Signed in** | `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
+| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
@@ -40,6 +40,17 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 - `search_people(query)` matches first, last or full name, ignoring case and accents. A middle initial stored in the first name ("Jane Q.") breaks a full-name match, so if "Jane Doe" finds nothing, search "Doe" and filter by jurisdiction before creating anyone.
 - `get_*_details` return each field's sources and a corroboration count.
 - Duplicate agencies are being merged: an agency id from an earlier session may stop resolving. Search by name again rather than reusing it.
+
+## Claiming work: `claim_work`, `release_work`
+
+Signed in only.
+- `claim_work(kind, state?, n?)` leases up to `n` targets (1–10, default 5) that nobody else holds, for 8 hours each.
+  Kinds: `no_agencies` (a governing place or county with no agencies, largest first), `jurisdiction_website_missing` (a government with agencies but no website), `agency_phone_missing` (an agency with no phone), `statewide_seat_unlinked` (a statewide office not linked to its state with `electing_jurisdiction_id`).
+  Returns `claimed` (each with `id`, `entity_type`, `name`, `jurisdiction`, `website`, `hint`, `lease_id`, `lease_expires_at`) and `open_leases`; an empty `claimed` means no open targets of that kind there.
+- The write the `hint` names (`propose_change phone`, `import_jurisdiction`) ends the lease on its own once the target is filled, in review, or recorded as blocked or absent.
+  A lease nobody finishes expires after 8 hours and the target goes back out.
+- `release_work(lease_ids)` hands targets back early and returns `released`.
+- Up to 25 open leases per person; past that `claim_work` returns an error asking to finish or release some.
 
 ## Fetching pages: `gather(url)`
 
