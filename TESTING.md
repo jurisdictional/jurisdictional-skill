@@ -21,7 +21,7 @@ Check the connection in a clean HOME, so your own MCP config can't mask the plug
 ```
 H=$(mktemp -d)
 HOME=$H claude --plugin-dir "$PWD" mcp list          # expect: plugin:jurisdictional:jurisdictional ... ✔ Connected
-mkdir -p $H/.jurisdictional && cp ~/.jurisdictional/token $H/.jurisdictional/
+HOME=$H claude --plugin-dir "$PWD" mcp login plugin:jurisdictional:jurisdictional   # browser sign-in; needs a real terminal, not `!`
 HOME=$H claude --plugin-dir "$PWD" mcp list          # expect: ✔ Connected, now signed in
 rm -rf $H
 ```
@@ -59,10 +59,9 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 *As a contributor, I sign in without my token appearing in the conversation.*
 
-- The skill gives the save command first (paste, don't run), then opens `/auth/cli`; it never runs `cat` or `echo` on the token.
-- Pressing Enter with the command itself still on the clipboard prints "Not saved…" and leaves any existing token file alone.
-- A token file holding anything but a `jur_...` key still connects, anonymously (the helper sends no header).
-- After `/mcp` reconnects, `propose_change` is in the tool list and the skill says so.
+- The skill sends the user to a separate terminal for `claude mcp login plugin:jurisdictional:jurisdictional`, then to a new session; the token never appears in the conversation and the skill never asks for it.
+- With no sign-in, the server still connects and lists the public tools.
+- In the new session after the browser approval, `propose_change` is in the tool list and the skill says so.
 
 ### T5 — Every value comes from a fetched page (eval E8)
 

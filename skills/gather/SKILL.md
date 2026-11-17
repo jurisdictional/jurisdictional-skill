@@ -3,8 +3,8 @@ name: gather
 description: Explore the governments that serve an address on jurisdictional.org — agencies, councils, officials, services, meetings — and contribute sourced civic data to fill the gaps. Use when the user runs /gather with an address or a city and state.
 disable-model-invocation: true
 user-invocable: true
-allowed-tools: WebSearch, Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, mcp__plugin_jurisdictional_jurisdictional__set_location, mcp__plugin_jurisdictional_jurisdictional__explore, mcp__plugin_jurisdictional_jurisdictional__search_jurisdictions, mcp__plugin_jurisdictional_jurisdictional__search_agencies, mcp__plugin_jurisdictional_jurisdictional__search_services, mcp__plugin_jurisdictional_jurisdictional__search_people, mcp__plugin_jurisdictional_jurisdictional__search_bodies, mcp__plugin_jurisdictional_jurisdictional__search_positions, mcp__plugin_jurisdictional_jurisdictional__get_jurisdiction_details, mcp__plugin_jurisdictional_jurisdictional__get_agency_details, mcp__plugin_jurisdictional_jurisdictional__get_service_details, mcp__plugin_jurisdictional_jurisdictional__get_person_details, mcp__plugin_jurisdictional_jurisdictional__get_body_details, mcp__plugin_jurisdictional_jurisdictional__find_jurisdictions_at_point, mcp__plugin_jurisdictional_jurisdictional__find_agencies_near_point, mcp__plugin_jurisdictional_jurisdictional__find_services_near_point, mcp__plugin_jurisdictional_jurisdictional__get_coverage, mcp__plugin_jurisdictional_jurisdictional__get_pending_tasks, mcp__plugin_jurisdictional_jurisdictional__get_next_uncovered, mcp__plugin_jurisdictional_jurisdictional__gather, mcp__plugin_jurisdictional_jurisdictional__get_change_status, mcp__plugin_jurisdictional_jurisdictional__get_image
-argument-hint: [address | city, state | next [state]]
+allowed-tools: Read, Grep, Glob
+argument-hint: "[address | city, state | next [state]]"
 ---
 
 # Gather — Civic Data
@@ -66,22 +66,23 @@ Check your tool list.
 Don't open with a status report: the user's first answer is Step 2's table.
 
 **Signing in** (when the user first wants to contribute). Researching pages (`gather`) and every write need sign-in.
-Never print, echo or `cat` the token, and don't ask the user to paste it into the chat.
+Sign-in happens in the browser; the token never enters the conversation.
 
-1. Give them this command and ask them to paste it at the prompt **without pressing Enter yet**: copying the command uses the clipboard, so it must come before the token.
-   It runs on their machine, so the token goes from the clipboard to a file without entering the conversation, and it saves only a `jur_...` key:
+1. Ask them to open a separate terminal window (not a `!` command here, which has no terminal for the sign-in) and run:
 
    ```
-   ! mkdir -p ~/.jurisdictional && t=$(pbpaste | tr -d '[:space:]'); case "$t" in jur_*[!A-Za-z0-9_-]*) t= ;; jur_*) (umask 077; printf '%s\n' "$t" > ~/.jurisdictional/token) && chmod 600 ~/.jurisdictional/token && echo "Token saved." ;; *) t= ;; esac; [ -n "$t" ] || echo "Not saved: the clipboard holds no jurisdictional.org token (jur_...). Copy it from jurisdictional.org/auth/cli, then run this again."
+   claude mcp login plugin:jurisdictional:jurisdictional
    ```
 
-   On Linux, `xclip -o -selection clipboard` replaces `pbpaste`.
-2. Run `open https://jurisdictional.org/auth/cli`. They sign in with GitHub, copy the token shown, and press Enter on the command.
-   "Not saved" means the clipboard held something else: copy the token again and rerun it (up-arrow).
-3. On "Token saved.", ask them to run `/mcp` and reconnect `jurisdictional` (or start a new session), then check that `propose_change` now appears.
+   If they added the server by hand rather than through the plugin, the name is `jurisdictional`.
+2. They approve on jurisdictional.org in the browser (sign in with GitHub if asked).
+3. They start a new Claude Code session; reconnecting from `/mcp` in this one keeps the anonymous tool list.
+   In the new session, `propose_change` appears in the tool list.
 
-The plugin reads `~/.jurisdictional/token` each time it connects.
-If the user added the server by hand with an `Authorization` header, that header is what counts: they update it there instead.
+`/mcp` doesn't offer Authenticate here: the server answers anonymously, so Claude Code never sees the 401 that would prompt it.
+
+Claude Code stores and refreshes the token itself.
+If the user added the server by hand with an `Authorization` header, that header takes precedence over the browser sign-in: they remove it to switch, or update it there.
 
 ### Step 1: Where are you?
 

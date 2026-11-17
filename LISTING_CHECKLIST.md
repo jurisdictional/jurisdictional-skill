@@ -27,7 +27,7 @@ Never describe it as CC0.
 - Plugin manifest: `name` is kebab-case with no reserved word; `version`, `description`, `author`, `homepage`, `repository`, `license` and `keywords` set. Field reference: https://code.claude.com/docs/en/plugins/manifest-reference
 - `LICENSE` file (MIT) and `license` in `plugin.json`. Checklist item: https://claude.com/docs/plugins/pre-submission-checklist
 - README over 40 words with the marketplace install line (the validator's advice check).
-- `.mcp.json` points at an `https://` remote server. The credential is not read from the environment: `bin/jurisdictional-headers.sh` reads `~/.jurisdictional/token` and sends `{}` when it is absent. `headersHelper` is a documented plugin field: https://code.claude.com/docs/en/mcp
+- `.mcp.json` points at an `https://` remote server with no headers and no `headersHelper`; sign-in is the server's OAuth (`claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then a new session). The directory accepts `headersHelper`, `bin/` and scripts only from Verified organizations (validator feedback, 2026-11-16), so 0.6.0 removed them.
 - Skill: `skills/gather/SKILL.md` is 381 lines (limit 500), `name` matches its folder, `description` says what and when. Spec: https://agentskills.io/specification
 - Server, checked against production on 2026-11-12:
   - Streamable HTTP at `https://jurisdictional.org/mcp`; `initialize` answers protocol `2025-06-18`; 20 public tools from `tools/list` with no token.
@@ -52,7 +52,7 @@ Never describe it as CC0.
 Plugin bundle, in order:
 
 1. **Icon.** Prepared, see Done; approve it. A square PNG or JPEG, 512 to 2048 px, under 2 MB, at `.claude-plugin/icon.png` or named by `icon` in `plugin.json`. SVG and WebP are not accepted. The validator says the file becomes the listing icon only once, on the first save or submission in the portal, so pick the final mark first. The only square PNG in the platform repo is `priv/static/images/jurisdictional-logo.png` at 200 × 200, too small; export a 1024 × 1024 version of the mark. Source: `claude plugin validate --strict .` output, 2026-11-12.
-2. **Commit the pending work in this repo**: the `plugin.json`, `.gitignore` and `README.md` changes above; the uncommitted "post as you go" edit in `skills/gather/SKILL.md` (its own commit); and the sign-in rewrite requested in `.claude/inbox/from-jurisdictional-2026-11-09-mcp-browser-sign-in.md` (lead with `/mcp` → Authenticate, keep the token file as the fallback). Bump `version` in `plugin.json`; the directory follows commits and a stale version keeps users on old copies.
+2. **Commit the pending work in this repo**: the `plugin.json`, `.gitignore` and `README.md` changes above; the uncommitted "post as you go" edit in `skills/gather/SKILL.md` (its own commit); and the sign-in rewrite requested in `.claude/inbox/from-jurisdictional-2026-11-09-mcp-browser-sign-in.md` (done in 0.6.0: browser sign-in via `claude mcp login`; the token file was dropped for the directory rules). Bump `version` in `plugin.json`; the directory follows commits and a stale version keeps users on old copies.
 3. **Decide the write-tool scope (D2 in OFFICIAL_SKILL_PLAN).** Today any signed-in user sees `create_entity` and `import_jurisdiction`, which apply live. The plan recommends listing reads plus `propose_change` only. This is a server change in the jurisdictional repo.
 4. **Done (2a97b93): `title` on every tool.** Production tools carry `readOnlyHint` but no `title`; the connector checklist asks for both, and missing annotations are the most common rejection. Server change in `lib/jurisdictional/mcp`. Checklist: https://claude.com/docs/connectors/building/review-criteria
 5. **Submit the plugin bundle** at https://claude.ai/directory/manage → Submit new → Plugin bundle. Needs a paid claude.ai plan and a connected GitHub account with push access to `jurisdictional/jurisdictional-skill`. The repo must be public before the listing goes live. Steps are Source, Validate, Listing details, Data handling, Compliance (a contact email plus four acknowledgements), Review and submit. Limits: 10 submissions per organization per 24 hours, one per repo and folder. Docs: https://claude.com/docs/directory/publish and https://claude.com/docs/plugins/submit
@@ -124,14 +124,14 @@ Done:
 
 Nearest real equivalent of a listing, in order of value:
 
-1. **Our Claude Code marketplace is the Grok Build marketplace.** Nothing to submit; the same repo serves both, per the features page above. **Unverified:** whether Grok Build honours `headersHelper` in a plugin `.mcp.json` (its own docs describe `headers` with `${VAR}` expansion, not a helper), and the exact `[[marketplace.sources]]` entry format, which the fetched page does not show.
+1. **Our Claude Code marketplace is the Grok Build marketplace.** Nothing to submit; the same repo serves both, per the features page above. **Unverified:** whether Grok Build's `/mcps` → `i` completes our OAuth sign-in for the plugin's server, and the exact `[[marketplace.sources]]` entry format, which the fetched page does not show.
 2. **MCP Registry entry** (above), which any client can search.
 3. **A documented custom-connector URL**, which `/skill` now is.
 
 Only Ryan can do:
 
 1. **Confirm on grok.com** with his account: add the connector, ask "who governs 300 Hemlock St, Vacaville, CA", and record whether Grok offers a sign-in for the server (the docs don't list the auth methods a custom connector supports). Screenshot the connector card for the marketing lane.
-2. **Confirm in Grok Build:** install it (`curl -fsSL https://x.ai/cli/install.sh | bash`, https://docs.x.ai/build/overview), add `jurisdictional/jurisdictional-skill` as a marketplace source, and check whether the plugin's server connects anonymously and whether `/mcps` → `i` signs in against our lazily-authenticated server. Record the result in `TESTING.md`.
+2. **Confirm in Grok Build:** install it following xAI's own instructions (https://docs.x.ai/build/overview), add `jurisdictional/jurisdictional-skill` as a marketplace source, and check whether the plugin's server connects anonymously and whether `/mcps` → `i` signs in against our lazily-authenticated server. Record the result in `TESTING.md`.
 3. **Ask xAI about the catalog.** No form exists; the route is a business contact. Decide whether to pursue it now or after the Anthropic listing. **Unverified** that a catalog slot is open to third parties at all.
 4. **Enterprise angle:** cities on Grok Business/Enterprise can be told the one-line admin step (Connectors → Other → our URL). Fits the verified-city idea.
 

@@ -10,7 +10,7 @@ Installed on Ryan's machine from this checkout (`claude plugin marketplace add <
 
 Done in this repo:
 - Function-only `agency_type`; examples validate against the data-repo schemas.
-- Anonymous connection works (headers helper; no 401 without a token, or with a malformed token file).
+- Anonymous connection works; sign-in is the server's OAuth via `claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then a new session (0.6.0 dropped the headers helper and `bin/` for the directory's unverified-org rules).
 - Sign-in command saves only a `jur_...` key and says whether it did.
 - Server fixes from our 2026-10-23 handoffs are live (jurisdictional `5ccf962`, `12ee07c`, `fc2375a`, `0847c70`); the skill uses `online_url` / `website_url`, `import_jurisdiction` `source_url`, and `evidence.source_url`.
 - SKILL.md rewritten against the live tools, detail in `references/`; under 500 lines.

@@ -14,8 +14,7 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 
 - `.claude-plugin/plugin.json` — plugin manifest (bump `version` on every release)
 - `.claude-plugin/marketplace.json` — single-plugin marketplace: `/plugin marketplace add jurisdictional/jurisdictional-skill`
-- `.mcp.json` — the MCP server, with `headersHelper` → `bin/jurisdictional-headers.sh`
-- `bin/jurisdictional-headers.sh` — sends `Authorization: Bearer <~/.jurisdictional/token>` when the file holds a `jur_...` key, `{}` otherwise
+- `.mcp.json` — the remote MCP server, URL only; sign-in is the server's OAuth (`claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then a new session)
 - `skills/gather/SKILL.md` — the flow: preflight → location → what exists → research → review → submit → verify
 - `skills/gather/references/tools.md` — what each MCP tool does to live data, and who can call it
 - `skills/gather/references/services.md` — gathering services
@@ -26,7 +25,8 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 
 - **Juricode**: given an address, every jurisdiction (federal → local) that governs that location.
 - **Access tiers**: no token → 19 public read tools. Signed in → `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, image candidates. Admin → `reconcile_roster`, `end_tenure`, `merge_entities`, `delete_entity`, coverage reports.
-- **Auth**: no header or an empty bearer gets the public tools; an unknown key gets HTTP 401 for the whole connection, so the helper sends no header unless the file holds a `jur_...` key. Plugin helpers don't see `TOKEN`-like env vars, so the token lives in `~/.jurisdictional/token` (from `/auth/cli`).
+- **Auth**: the server implements MCP authorization (OAuth with dynamic client registration). Read tools are public; a write without a token gets HTTP 401 with `WWW-Authenticate`, but anonymous connects never 401, so `/mcp` doesn't offer Authenticate: sign in with `claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then start a new session (verified 2026-11-16). The plugin ships no scripts, `bin/`, or `headersHelper`: the directory accepts those only from Verified organizations, so keep it that way.
+- **Directory rules (unverified org)**: `allowed-tools` stays at `Read, Grep, Glob`; only Markdown, JSON, text and images in the plugin; no `curl … | sh` in any shipped file; quote YAML frontmatter values that start with `[` or contain `#`.
 - **Writes**: `create_entity` and `import_jurisdiction` apply live; `propose_change` queues for review, or corroborates when the value is unchanged.
 - **Provenance**: values come only from the government's own page — fetched with `gather`, an archived capture (`mcc_read` from the local Common Crawl server in `~/workspace/municipal-common-crawl`, or `gather`'s archived copy; cited with the capture date), the user's browser, or the user's paste — or from the user's own knowledge. Never search snippets or training data.
 

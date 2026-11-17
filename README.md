@@ -69,21 +69,27 @@ flowchart TD
 ## Signing in
 
 **Exploring works without an account.**
-Researching pages and contributing need a jurisdictional.org token:
+Researching pages and contributing need you to sign in, which happens in your browser:
 
-1. Paste this command at the Claude Code prompt, but **don't press Enter yet** (copying it replaces your clipboard, so it comes first).
-   It saves the token from your clipboard to `~/.jurisdictional/token`, without the token entering the chat, and only if the clipboard holds a `jur_...` key:
+1. In a terminal window of its own, run:
 
    ```
-   ! mkdir -p ~/.jurisdictional && t=$(pbpaste | tr -d '[:space:]'); case "$t" in jur_*[!A-Za-z0-9_-]*) t= ;; jur_*) (umask 077; printf '%s\n' "$t" > ~/.jurisdictional/token) && chmod 600 ~/.jurisdictional/token && echo "Token saved." ;; *) t= ;; esac; [ -n "$t" ] || echo "Not saved: the clipboard holds no jurisdictional.org token (jur_...). Copy it from jurisdictional.org/auth/cli, then run this again."
+   claude mcp login plugin:jurisdictional:jurisdictional
    ```
 
-   (On Linux, use `xclip -o -selection clipboard` in place of `pbpaste`.)
-2. Open [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli), sign in with GitHub, copy the token, and press Enter on the command.
-3. On "Token saved.", run `/mcp` and reconnect `jurisdictional`, or start a new session.
+   (If you added the server by hand with `claude mcp add`, the name is `jurisdictional`.)
+2. Approve on jurisdictional.org (sign in with GitHub if asked).
+3. Start a new Claude Code session.
+   Its `/mcp` tool list for `jurisdictional` now includes `propose_change`.
 
-The plugin sends the token only when that file holds a `jur_...` key; otherwise you get the public read-only tools.
-If you added the server by hand with an `Authorization` header, update that header instead.
+Claude Code stores and refreshes the sign-in for you.
+
+### Other MCP clients
+
+A client without browser sign-in can send a token instead.
+Copy one from [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli) and configure your client to send it as an `Authorization: Bearer jur_...` header to `https://jurisdictional.org/mcp`.
+A configured header takes precedence over the browser sign-in, so remove it if you switch.
+Earlier versions of this plugin read `~/.jurisdictional/token`; this version doesn't, and you can delete that file.
 
 ## What you can contribute
 
