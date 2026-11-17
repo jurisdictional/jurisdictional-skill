@@ -113,6 +113,7 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
 - Agency fields: name, description, agency_type, website_url, phone, email, address, bodies, services.
   Body: name, description, legislative_type, url, source, meeting_url, phone, email, address.
   A person's office phone and official email go on the person with `propose_change` (field_name `phone` or `email`).
+- Feedback (`send_feedback`, signed in): message (exactly as the person approved it), sentiment (positive, neutral, negative), actor (human, agent), feature_areas, optional context and entity_type with entity_id. Stored with the account for the team, never published; returns `feedback_id`.
 - Social account (`create_entity`, `entity_type: "social_account"`): url, source_url (required), jurisdiction_id, and at most one owner: person_id, position_id, body_id or agency_id; none means the government's own account.
   Details tools list confirmed accounts as `social_accounts: [{id, platform, handle, url, status}]`.
   Service: name, description, service_type, online_url, eligibility_requirements, cost, contact_info.

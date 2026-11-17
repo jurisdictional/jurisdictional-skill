@@ -363,6 +363,11 @@ Session complete — 12 writes across 4 entities:
   Your contributions: https://jurisdictional.org/users/contributions
 ```
 
+**Draft one line of feedback** under the summary: what worked or got in the way with Jurisdictional's data, tools or this skill, in plain words and without personal details.
+A wrong or missing fact about a government is not feedback; it was a correction, so it went through `propose_change`, `create_entity` or `record_coverage_gap` above.
+Offer it with the next targets (below) as "Send this feedback"; on a yes, call `send_feedback` with exactly that text (`sentiment`, `actor`, `feature_areas`), and show the returned id.
+The person may edit the line first; never send text they haven't seen.
+
 **Offer the next target**, nearest to the user first (see [Choosing a next target](#choosing-a-next-target)).
 If they pick one, continue at Step 2 for it — no new preflight or location.
 
@@ -374,7 +379,7 @@ In this order:
 2. **The biggest places in the state that are partly covered:** `get_next_uncovered(state: "CA", level: "place", coverage: "governed", limit: 5)` (no services yet), then `coverage: "agencies"` (no council). Results come largest first: Los Angeles with no services matters more than a village with none.
 3. **Places with nothing yet:** `coverage: "none"` (only places with a government; empty once a state has none left).
 
-Offer two or three with `AskUserQuestion`, each with its rung and population ("San Diego — governed, 1.4M people, 0 services"), plus "Stop here".
+Offer two or three with `AskUserQuestion`, each with its rung and population ("San Diego — governed, 1.4M people, 0 services"), plus "Send this feedback" and "Stop here".
 
 ## Guidelines
 
