@@ -77,6 +77,7 @@ propose_change(entity_type: "agency", entity_id: 1234, field_name: "phone",
                notes: "Listed on the department contact page")
 ```
 
+- `source_url` is required: the http(s) page where the value was read. A proposal without one is refused.
 - Creates a **pending** change for human review, and returns its `change_id` and a URL.
 - `entity_type`: jurisdiction, agency, body, service, position, person.
 - `field_name` must be a real field; a wrong name fails and lists the valid ones.
@@ -114,7 +115,7 @@ Every field set on the new row is recorded as a claim citing `source_url`, and i
 |---|---|---|
 | agency | `jurisdiction_id` | `entity_subtype` = agency_type (function only, or omit). `website_url` = the agency's own page, not the list of departments you found it on; omit it if the agency has none. The government itself is the jurisdiction: never create a "City of …" agency for it. |
 | body | `jurisdiction_id` | Omit `agency_id` for a council or board: it belongs to the jurisdiction. `entity_subtype` = legislative_type (council, commission, board). `source_url` becomes the body's `source`. |
-| service | `jurisdiction_id`, `agency_id` | `online_url` = the action link (portal, form), not the page describing it — see [services.md](services.md). `cost`, `eligibility`. |
+| service | `jurisdiction_id`, `agency_id` | `entity_subtype` = service_type and `actions` (an array), both from the lists in [services.md](services.md). `online_url` = the action link (portal, form), not the page describing it. `cost`, `eligibility`. |
 | position | `jurisdiction_id`, `body_id` (or `agency_id`) | A position with the same label under the same body is returned, not duplicated. For a district seat, `electing_jurisdiction_id` = the district whose voters elect it (county_district, city_council_district, board_of_equalization_district, congressional_district, state_legislative_upper/lower): "Supervisor, District 4" on the Board of Supervisors gets Supervisorial District 4. The body stays with its own jurisdiction. On an existing position, `propose_change(field_name: "electing_jurisdiction_id")`. |
 | person | `jurisdiction_id`; `position_id` to seat them | Use `first_name`/`last_name` exactly as published. With `position_id`, a tenure is created and **`source_url` is required** (the roster or bio page). `start_date` and `term_ends_on` only when the source publishes them. Re-creating a person who already holds the seat refreshes that tenure's source instead of adding a second one. |
 | meeting | `jurisdiction_id`, `body_id`, `start_time` | `agenda_url`, `minutes_url`, `video_url`, `status` (scheduled, completed, cancelled, postponed), `external_id` (eScribe GUID, Granicus clip id). |
@@ -134,13 +135,14 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
             url: "...", source: "<roster page>"}],
   agencies: [{ref: "pd", name: "Vacaville Police Department", agency_type: "police",
               website_url: "...", phone: "...",
-              services: [{ref: "pd-report", name: "File a Police Report", service_type: "public_safety",
+              services: [{ref: "pd-report", name: "File a Police Report", service_type: "public_safety", actions: ["report"],
                           online_url: "<the form>"}]}])
 ```
 
 - Always run `dry_run: true` first and show the user the result.
 - Retry-safe: an item whose name already exists in its scope comes back `existing`, not duplicated.
-  Existing rows are left unchanged — use `propose_change` to fix them.
+  An existing agency's description, agency_type, website_url, phone, email and address are proposed as pending changes (or corroborate when unchanged); other existing rows are left as they are, so fix them with `propose_change`.
+- The dry run reports `would_create`, `would_propose` and `would_corroborate`.
 - All or nothing; unknown fields are rejected and every error is listed by path.
 - Agency fields: name, description, agency_type, website_url, phone, email, address, bodies, services.
   Body: name, description, legislative_type, url, source, meeting_url, phone, email, address.
@@ -148,7 +150,7 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
 - Feedback (`send_feedback`, signed in): message (exactly as the person approved it), sentiment (positive, neutral, negative), actor (human, agent), feature_areas, optional context and entity_type with entity_id. Stored with the account for the team, never published; returns `feedback_id`.
 - Social account (`create_entity`, `entity_type: "social_account"`): url (X, Facebook, Instagram, YouTube, LinkedIn, or a Nextdoor agency page `nextdoor.com/agency-detail/<state>/<city>/<agency>/`; Nextdoor profiles, posts and invites are refused), source_url (required), jurisdiction_id, and at most one owner: person_id, position_id, body_id or agency_id; none means the government's own account.
   Details tools list confirmed accounts as `social_accounts: [{id, platform, handle, url, status}]`.
-  Service: name, description, service_type, online_url, eligibility_requirements, cost, contact_info.
+  Service: name, description, service_type, actions, online_url, eligibility_requirements, cost, contact_info.
 - Each created row gets one claim per field set, citing the item's own `source_url`, or the top-level `source_url` for items without one; `counts.claims` reports how many.
   Give an item its own `source_url` whenever its values came from a different page than the top-level one.
   Matched (`existing`) rows get no claims.

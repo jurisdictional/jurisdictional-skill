@@ -43,7 +43,13 @@ Ask the user if a whole category seems borderline.
 
 ## Fields
 
-- `entity_subtype` (the service's `service_type`): health, education, housing, transportation, employment, public_safety, utilities, recreation, social_services.
+A service has two fields from fixed lists; a value outside either is refused on write.
+
+- `entity_subtype` (the service's `service_type`), what it is for: health, education, housing, transportation, employment, business, public_safety, utilities, recreation, social_services.
+- `actions`, what a resident does with it, one or more of: apply, pay, report, reserve, register, renew, request, look_up, subscribe, schedule.
+  `report` tells the government about a problem (a pothole); `request` asks it for a thing (records, a bulk pickup); `schedule` books an appointment or inspection.
+  A business license is `service_type: business, actions: [apply, renew]`.
+  `create_entity` and `import_jurisdiction` take `actions` as an array; `propose_change` takes a comma list (`"reserve,pay"`).
 - `agency_id`: the agency that runs it. Required.
 - `cost`: a plain number in dollars (`"50"`, `"12.50"`). Put tiered or conditional fees in `description`.
 - `eligibility`: who may use it, as published.
@@ -56,7 +62,7 @@ It is live immediately with no review, and a later `propose_change` to it queues
 
 ```
 create_entity(entity_type: "service", name: "Utility Bill Pay", agency_id: 16770, jurisdiction_id: 70118,
-              source_url: "https://www.city.gov/how-do-i",
+              entity_subtype: "utilities", actions: ["pay"], source_url: "https://www.city.gov/how-do-i",
               online_url: "https://city.munisselfservice.com/css/citizens/UtilityBilling/Default.aspx")
               # ✅ cites the page read; the portal is the live link
 

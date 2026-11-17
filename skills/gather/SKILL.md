@@ -198,6 +198,7 @@ Check a browser capture or a paste for a block page too, the same way.
 
 **Within the rung, work top-down:** agencies before their services, a body before its seats, seats before the people in them, then meetings.
 **Services run alongside agencies** — as you list each agency, ask what a resident can do with it. See [references/services.md](references/services.md).
+Give each one a `service_type` and its `actions` (apply, pay, report, reserve…), both from the fixed lists there.
 
 **Post as you go.** Write each contribution when its source page has been read. Do not collect a jurisdiction and submit it in one batch at the end. The agency is written when its page is read. The body and the people on a roster are written when that roster is read. A service is written when its action link is read. Then keep reading.
 

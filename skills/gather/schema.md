@@ -82,7 +82,8 @@ The source of truth is the `agency_type` enum on the `search_agencies` MCP tool.
 }
 ```
 
-`category` takes a service type: health, education, housing, transportation, employment, public_safety, utilities, recreation, social_services.
+`category` takes a service type: health, education, housing, transportation, employment, business, public_safety, utilities, recreation, social_services.
+The local format has no field for `actions` yet (the data repo's `service.schema.json` doesn't allow one); set them when submitting through the MCP tools.
 
 ### Body File
 
