@@ -55,7 +55,7 @@ Check your tool list.
    > /plugin install jurisdictional@jurisdictional
    > ```
    >
-   > Or add just the server: `claude mcp add --transport http jurisdictional https://jurisdictional.org/api/mcp/message`.
+   > Or add just the server: `claude mcp add --transport http jurisdictional https://jurisdictional.org/mcp`.
    > Then start a new session.
 
 2. **`set_location` but no `propose_change`**: connected, not signed in. Exploring works; carry on, and note "not signed in" in one line under Step 2's table. Offer sign-in only when the user first chooses to contribute.
@@ -195,9 +195,17 @@ Check a browser capture or a paste for a block page too, the same way.
 **Within the rung, work top-down:** agencies before their services, a body before its seats, seats before the people in them, then meetings.
 **Services run alongside agencies** — as you list each agency, ask what a resident can do with it. See [references/services.md](references/services.md).
 
+**Post as you go.** Write each contribution when its source page has been read. Do not collect a jurisdiction and submit it in one batch at the end. The agency is written when its page is read. The body and the people on a roster are written when that roster is read. A service is written when its action link is read. Then keep reading.
+
 At each layer look for names, types, URLs, descriptions, contact info and relationships.
 
 - **Agencies:** set `agency_type` from what the agency does (police, parks_recreation, planning...), or leave it out when the page doesn't make it clear. Structural words like "department" are rejected. The list is in [schema.md](schema.md).
+- **Contacts, every layer:** take the phone and email each page publishes, for the entity that page is about.
+  An agency's main line and email come from its own landing page; a sub-page's number belongs to the sub-unit.
+  A body's phone and email are its own, usually the clerk's, not the staffing agency's.
+  An official's office phone and official email come from their bio or roster entry; never a personal or campaign contact.
+  Agencies and bodies take them in `import_jurisdiction`; for an existing entity or a person, `propose_change` once per field.
+  When the page truly publishes none, say so in the summary; an admin records it with `record_field_absence` (agency phone or email, body phone or email).
 - **Officials:** read the roster page; note start dates and term ends only when published.
 - **Photos, every time:** whenever a page you fetched shows officials (a roster, a bio, a board page), take each matched holder's headshot from the same HTML: the `<img>` whose alt, caption or file name carries the person's name, or the one nearest their name, never from the header, nav, footer or a slider.
   Take the largest size the page offers (`srcset`), keep the alt and caption verbatim, and note any photographer credit next to the image.
@@ -213,8 +221,9 @@ If you can't find something, leave it out and note it so someone else can fill t
 
 ### Step 4: Review before submitting
 
-Show exactly what will be written, and wait for approval.
-Review **a layer at a time**: one table for all the new agencies, one for their services. For `import_jurisdiction`, the dry run's result is the table.
+Post what you have just read, then continue. Do not hold finished entities for one submission at the end.
+Show the contribution you are posting now, and wait for approval of that contribution.
+For `import_jurisdiction`, the dry run's result is the table, and the payload is only the entities whose pages are already read.
 For changes to an existing entity, one table per entity:
 
 ```
@@ -257,7 +266,7 @@ The same goes for `search_bodies`, `search_services`, `search_positions` (by `bo
 
 | Situation | Tool |
 |---|---|
-| An empty or thin jurisdiction, many entities at once | `import_jurisdiction` — always `dry_run: true` first; show the result; then run it for real |
+| Several entities whose pages are already read | `import_jurisdiction` — always `dry_run: true` first; show the result; then run it for real |
 | One new entity | `create_entity` |
 | A missing or wrong field on an existing entity | `propose_change`, once per field |
 | A value already there, confirmed by another page | `propose_change` with the same value and the new `source_url` |
@@ -293,8 +302,9 @@ Jurisdiction (exists, from the juricode)
 **`source_url` is the citation; live links are separate.** Pass the page you read as `source_url`, the agency's own page as `website_url`, and the service's action link as `online_url` — never the list page where you found them.
 Both links are live with no review.
 
-**Two modes.** The user can approve each layer, or say "fill in everything you can find" — then research and submit fully, and show every `change_id` and URL in the summary at the end.
-Even then, run `import_jurisdiction` and `reconcile_roster` as dry runs first, and show the result before writing.
+**Two modes.** The user can approve each contribution as it comes up, or say "fill in everything you can find" — then keep posting as each page is read, and show every `change_id` and URL in the summary at the end.
+Either way, post as you go. Do not wait until the rest of the site has been fetched.
+Run `import_jurisdiction` and `reconcile_roster` as dry runs first, and show the result before writing. The import is the entities already in hand.
 
 ### Step 6: Verify and close the loop
 
@@ -372,5 +382,6 @@ Offer two or three with `AskUserQuestion`, each with its rung and population ("S
 - **New entities go live; edits get reviewed.** Take the most care with `create_entity` and `import_jurisdiction`.
 - **Source hierarchy.** The government's own site (via `gather`) first; then other official sites (a state municipal league, the county); then news; then the user's local knowledge, attributed as "user-provided". Search snippets and training data are never sources.
 - **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them, and ask where it's published.
+- **Post as you go.** A contribution is written when its page has been read. Do not batch the jurisdiction for one submission at the end.
 - **Be incremental.** Five verified agencies are worth more than thirty unverified ones.
 - **Local files are optional.** If the user wants a local record, write JSON per [schema.md](schema.md). The submission is the API call, not the file.
