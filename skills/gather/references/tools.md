@@ -113,6 +113,8 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
 - Agency fields: name, description, agency_type, website_url, phone, email, address, bodies, services.
   Body: name, description, legislative_type, url, source, meeting_url, phone, email, address.
   A person's office phone and official email go on the person with `propose_change` (field_name `phone` or `email`).
+- Social account (`create_entity`, `entity_type: "social_account"`): url, source_url (required), jurisdiction_id, and at most one owner: person_id, position_id, body_id or agency_id; none means the government's own account.
+  Details tools list confirmed accounts as `social_accounts: [{id, platform, handle, url, status}]`.
   Service: name, description, service_type, online_url, eligibility_requirements, cost, contact_info.
 - Each created row gets one claim per field set, citing the item's own `source_url`, or the top-level `source_url` for items without one; `counts.claims` reports how many.
   Give an item its own `source_url` whenever its values came from a different page than the top-level one.

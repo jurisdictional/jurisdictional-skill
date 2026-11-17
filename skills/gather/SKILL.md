@@ -206,6 +206,10 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   An official's office phone and official email come from their bio or roster entry; never a personal or campaign contact.
   Agencies and bodies take them in `import_jurisdiction`; for an existing entity or a person, `propose_change` once per field.
   When the page truly publishes none, say so in the summary; an admin records it with `record_field_absence` (agency phone or email, body phone or email).
+- **Social accounts, every layer:** take the official X, Facebook, Instagram, YouTube and LinkedIn links a page shows, and write each with `create_entity` (`entity_type: "social_account"`, `url` as the page gives it, `source_url` the page, `jurisdiction_id`).
+  The owner follows the page: a site-wide header or footer link is the government's (no owner); a department page's link is that agency's (`agency_id`); a council page's is the body's (`body_id`); an officeholder's bio page gives `person_id` for their own account, or `position_id` for an office account that passes holder to holder (@MayorOf…).
+  Official accounts only: skip vendors, foundations, campaigns and personal accounts, and share, intent or post links.
+  A new account is suggested and reviewed before it shows.
 - **Officials:** read the roster page; note start dates and term ends only when published.
 - **Photos, every time:** whenever a page you fetched shows officials (a roster, a bio, a board page), take each matched holder's headshot from the same HTML: the `<img>` whose alt, caption or file name carries the person's name, or the one nearest their name, never from the header, nav, footer or a slider.
   Take the largest size the page offers (`srcset`), keep the alt and caption verbatim, and note any photographer credit next to the image.
