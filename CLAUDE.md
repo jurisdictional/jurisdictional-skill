@@ -24,7 +24,7 @@ The server's live `tools/list` is the source of truth for tool names, fields and
 ## Key Concepts
 
 - **Juricode**: given an address, every jurisdiction (federal → local) that governs that location.
-- **Access tiers**: no token → 19 public read tools. Signed in → `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, image candidates. Admin → `reconcile_roster`, `end_tenure`, `merge_entities`, `delete_entity`, coverage reports.
+- **Access tiers**: no token → 20 public read tools. Signed in → `gather`, `propose_change`, `create_entity`, `import_jurisdiction`, image candidates. Admin → `reconcile_roster`, `end_tenure`, `merge_entities`, `delete_entity`, coverage reports.
 - **Auth**: the server implements MCP authorization (OAuth with dynamic client registration). Read tools are public; a write without a token gets HTTP 401 with `WWW-Authenticate`, but anonymous connects never 401, so `/mcp` doesn't offer Authenticate: sign in with `claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then start a new session (verified 2026-11-16). The plugin ships no scripts, `bin/`, or `headersHelper`: the directory accepts those only from Verified organizations, so keep it that way.
 - **Directory rules (unverified org)**: `allowed-tools` stays at `Read, Grep, Glob`; only Markdown, JSON, text and images in the plugin; no line that downloads and runs a script in any shipped file (link the vendor's install page instead); quote YAML frontmatter values that start with `[` or contain `#`.
 - **Writes**: `create_entity` and `import_jurisdiction` apply live; `propose_change` queues for review, or corroborates when the value is unchanged.

@@ -7,7 +7,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 
 | Access | Tools |
 |---|---|
-| **Anyone** (no token; 19 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
+| **Anyone** (no token; 20 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions, places), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
 | **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
@@ -28,7 +28,7 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 - `get_jurisdiction_details(id | ocd_id)` — also takes an Open Civic Data id.
   A place carries `kind` (`governing`, `non_governing` for a census-designated place, `unclassified`) and `census_funcstat`.
   `elected_seats` lists the seats this jurisdiction elects, with each current holder (or null).
-- `get_coverage(jurisdiction_id)` → `coverage.coverage_level` (the ladder below), `tier`, counts per layer, missing-contact counts, ranked recommendations by level.
+- `get_coverage(jurisdiction_id)` → `coverage.coverage_level` (the ladder below), `tier`, counts per layer (including `counts.places`), missing-contact counts, ranked recommendations by level.
   For an electoral district, coverage is its seats: `counts.elected_seats` / `elected_seats_held`, the tier is based on them, and the recommendations are `link_district_seat` (with the exact `create_entity` call) or `add_officials`.
 - `get_pending_tasks(jurisdiction_id, task_type?)` — task types: discover_agencies, extract_agency_contacts, discover_bodies, extract_officials, extract_services, extract_meeting_schedule, verify_stale_data, resolve_url, extract_budget.
 - `get_next_uncovered(state, level, coverage, limit)` — `coverage`: `none` (no agencies, the default), `agencies` (agencies but no council or board), `governed` (agencies and a body but no services), `served`.
@@ -39,6 +39,7 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 - `explore(focus: "people", jurisdiction_ids)` also returns whoever holds the seats those jurisdictions elect, so passing the district layers from `set_location` answers "who represents me". There is no `positions` focus.
 - `search_people(query)` matches first, last or full name, ignoring case and accents. A middle initial stored in the first name ("Jane Q.") breaks a full-name match, so if "Jane Doe" finds nothing, search "Doe" and filter by jurisdiction before creating anyone.
 - `get_*_details` return each field's sources and a corroboration count.
+- `search_places(query, place_type?, jurisdiction_ids?, limit?)` finds parks, libraries, schools and community centers by name, description or city.
 - Duplicate agencies are being merged: an agency id from an earlier session may stop resolving. Search by name again rather than reusing it.
 
 ## Claiming work: `claim_work`, `release_work`
@@ -118,6 +119,7 @@ Every field set on the new row is recorded as a claim citing `source_url`, and i
 | person | `jurisdiction_id`; `position_id` to seat them | Use `first_name`/`last_name` exactly as published. With `position_id`, a tenure is created and **`source_url` is required** (the roster or bio page). `start_date` and `term_ends_on` only when the source publishes them. Re-creating a person who already holds the seat refreshes that tenure's source instead of adding a second one. |
 | meeting | `jurisdiction_id`, `body_id`, `start_time` | `agenda_url`, `minutes_url`, `video_url`, `status` (scheduled, completed, cancelled, postponed), `external_id` (eScribe GUID, Granicus clip id). |
 | agenda_item | `jurisdiction_id`, `meeting_id` | |
+| place | `jurisdiction_id`, `place_type`, `name`, `source_url` | `place_type`: park, library, school, community_center. Optional `managing_agency_id`, `website_url`, `street_address`, `city`, `state`, `zip_code`, `phone`, `latitude`, `longitude`, `description`. The same name and type in the jurisdiction returns the existing place with `duplicate: true`. |
 
 `source_key` names the source's registry entry, default `municipal_official_sites` (a government's own site).
 When the page is not the government's own site — a state municipal league profile, a county directory — say so in `notes`, and ask an admin for the right key (`list_data_sources`).
@@ -188,9 +190,14 @@ The license follows from where the photo was published:
 
 | Where | `license` | `attribution` |
 |---|---|---|
-| A CA or FL city or county site, no photographer credited | `public-domain-ca-gov` / `public-domain-fl-gov` | optional |
-| Any other state's city or county site, the official's headshot, no photographer credited | `government-published-headshot` (not a public-domain claim) | required: the government, e.g. "City of Austin" |
-| A school district or college site, or a photographer credited | `unknown` (stays hidden) | |
+| A CA or FL city or county site | `public-domain-ca-gov` / `public-domain-fl-gov` | optional |
+| Any other state's city or county site, the official's headshot | `government-published-headshot` (not a public-domain claim) | required: the government, e.g. "City of Austin" |
+| A school district or college site | `unknown` (stays hidden) | |
+
+A photographer credit doesn't hold an image: approve it with `photographer_credit` set to a clean credit line ("Lea Rhea Photography, LLC").
+Left out, it defaults to the file's embedded credit (`get_image` `embedded_credit`); pass `""` when that names no photographer (a title, a placeholder, or the government itself).
+Hold an image only when the file or the site states reuse terms ("do not use without consent").
+A wrong credit on an approved image: `update_image_credit(image_id, photographer_credit)`, or `""` to clear it.
 
 `license_evidence` names the page and the rule, e.g. "Official headshot on https://www.austintexas.gov/council; no photographer credited".
 Non-admins leave candidates for an admin and list them in the session summary.

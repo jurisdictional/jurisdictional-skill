@@ -192,6 +192,7 @@ Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL 
    - **Better:** "Right-click the main content → Inspect → right-click the `<main>` element → Copy → Copy outerHTML, and paste it here."
 
    A value from a pasted page is cited with that page's URL, and the `notes` say "pasted by the user from their browser".
+   Attach the paste as `capture` (`via: "paste"`, the pasted `text`) on the same writes.
 
 Check a browser capture or a paste for a block page too, the same way.
 
@@ -215,6 +216,8 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   With `mcc_social`, own each account by its sample page, read that page with `mcc_read`, and seat-check a bio page's person first.
   An account in a department subdomain's chrome (`hosts` only police.example.gov) is that agency's, even when its tier is core.
   A new account is suggested and reviewed before it shows.
+- **Parks, libraries, schools and community centers:** at each layer, look for the parks agency, its reservation and registration services, and the places themselves.
+  `search_places` first, then `create_entity` (`entity_type: "place"`, `place_type`, `name`, `jurisdiction_id`, `managing_agency_id` when the page names the agency, `source_url`); see [tools.md](references/tools.md).
 - **Officials:** read the roster page; note start dates and term ends only when published.
 - **Photos, every time:** whenever a page you fetched shows officials (a roster, a bio, a board page), take each matched holder's headshot from the same HTML: the `<img>` whose alt, caption or file name carries the person's name, or the one nearest their name, never from the header, nav, footer or a slider.
   Take the largest size the page offers (`srcset`), keep the alt and caption verbatim, and note any photographer credit next to the image.
