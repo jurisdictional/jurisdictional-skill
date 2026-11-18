@@ -9,12 +9,12 @@ They line up with the evals in the platform's listing plan (`docs/OFFICIAL_SKILL
 Validate the manifests:
 
 ```
-claude plugin validate .
+claude plugin validate --strict .
 claude plugin validate --strict .claude-plugin/marketplace.json
 ```
 
-`claude plugin validate --strict .` warns that the root `CLAUDE.md` is not shipped as context.
-That file is for developing this repo, so the warning is expected.
+Both pass with no warnings.
+The repo's guidance for Claude Code lives in `.claude/CLAUDE.md`, not at the root, because the validator warns about a root `CLAUDE.md` in a plugin.
 
 Check the connection in a clean HOME, so your own MCP config can't mask the plugin's:
 
