@@ -5,24 +5,31 @@ This file only says what's done here and what's next, so no second plan forks.
 
 ## Now
 
-Coverage-led contributor flow (plugin 0.5.0, 2026-10-27; districts graded by their seats): every layer of the address graded by rung and tier, three stops with `AskUserQuestion`, next targets that have a government, `/gather next [state]`.
+Directory submission (plugin 0.6.6, 2026-11-17). `claude plugin validate --strict .` passes with no warnings, every listing URL answers, and every production tool carries its title and hints; Ryan answers D1, D2, D5 and D6 and submits (LISTING_CHECKLIST.md, "Ready to submit?").
 Installed on Ryan's machine from this checkout (`claude plugin marketplace add <this repo>`), so edits here are the live skill.
 
 Done in this repo:
+- Coverage-led contributor flow (0.5.0): every layer graded by rung and tier, three stops with `AskUserQuestion`, `/gather next [state]`; districts graded by their seats.
+- Directory-ready (0.6.0): no scripts, `bin/` or `headersHelper`; `allowed-tools: Read, Grep, Glob`; badge icon; listing URLs in `plugin.json`, including `termsOfServiceUrl`.
+- Sign-in is the server's OAuth: `claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then a new session (verified 2026-11-16). `/mcp` doesn't offer Authenticate, because anonymous connects never 401.
+- Work claiming with `claim_work` / `release_work` (0.6.2); feedback via `send_feedback`.
+- Browser and paste captures sent as `capture` on writes (0.6.1, 0.6.3).
+- Photographer credits approved, not held; parks, libraries, schools and community centers as places (0.6.3).
+- Service `service_type` + `actions`; `propose_change` needs `source_url` (0.6.4).
+- Website pages by kind with `create_entity` page (0.6.5).
+- Listing pass (0.6.6): repo guidance moved to `.claude/CLAUDE.md` so strict validation passes; README says what the plugin sends; tools.md lists 21 public tools and `send_feedback`.
 - Function-only `agency_type`; examples validate against the data-repo schemas.
-- Anonymous connection works; sign-in is the server's OAuth via `claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then a new session (0.6.0 dropped the headers helper and `bin/` for the directory's unverified-org rules).
-- Sign-in command saves only a `jur_...` key and says whether it did.
-- Server fixes from our 2026-10-23 handoffs are live (jurisdictional `5ccf962`, `12ee07c`, `fc2375a`, `0847c70`); the skill uses `online_url` / `website_url`, `import_jurisdiction` `source_url`, and `evidence.source_url`.
-- SKILL.md rewritten against the live tools, detail in `references/`; under 500 lines.
-- Own marketplace, LICENSE, README for people arriving from jurisdictional.org.
-- `TESTING.md` scenarios.
+- SKILL.md written against the live tools, detail in `references/`; under 500 lines.
+- Own marketplace, LICENSE, README, `TESTING.md` scenarios.
 
-Next (from M6, each waits on a decision in OFFICIAL_SKILL_PLAN §6):
-- A model-invocable, read-only `juricode` skill for "who represents me" (needs M2 on the server).
-- OAuth instead of the token file, once the server has it (M8).
-- 1.0.0 and the directory submission (M7).
+Next:
+- Done in jurisdictional 2026-11-17: `/terms` (7dbf572d) and the sign-in wording on `/skill`, `docs/API.md` and `llms.txt` (25fb8a6f).
+- Waiting on jurisdictional: the privacy page gaps (handoff 2026-11-17).
+- Done in jurisdictional 2026-11-17: tool descriptions without internal names (3e5df62e); `delete_entity` and `merge_entities` listed to admins only, `gather` read-only, overwriting admin tools destructive (034af4d8).
+- Open for Ryan: D1, D2 (write tools and the daily cap), D5 (GitHub org), D6. An earlier session recorded D2 and D5 as decided; that is not Ryan's recorded decision, so they stay open.
+- Ryan: submit the plugin bundle, then the MCP connector.
 - Run TESTING.md T1–T12 in a live interactive session and record the results here.
-  Tool-level read path checked on prod 2026-10-27 (300 Hemlock St, Vacaville), passing: 12-layer juricode with the census county division tagged `non_governing`; coverage for all 10 governing layers in one batch; every district seat linked and held; `explore(people)` over the districts returns all six representatives; `get_next_uncovered` returns no census-designated places (CA `none` is empty; `governed` gives Oceanside, Garden Grove, Lancaster); full-name `search_people` works. Not run: the conversation itself (stops, tables, wording), writes, and the browser fallback.
-- Browser fallback shipped (0.5.0). Waiting on jurisdictional: accept a captured page (HTML, sha256, captured_at) as evidence on writes, so a browser capture keeps a server-side copy (handoff 2026-10-27).
+  It also covers live checks for captures in review, services with both fields, and a city's meetings and budget pages.
+  Tool-level read path checked on prod 2026-10-27 (300 Hemlock St, Vacaville), passing: 12-layer juricode with the census county division tagged `non_governing`; coverage for all 10 governing layers in one batch; every district seat linked and held; `explore(people)` over the districts returns all six representatives; `get_next_uncovered` returns no census-designated places; full-name `search_people` works.
+- Later (each waits on a decision in OFFICIAL_SKILL_PLAN §6): a model-invocable, read-only `juricode` skill for "who represents me" (needs M2 on the server); 1.0.0.
 - Optional, per machine: register the Common Crawl archive server (`claude mcp add --scope user mcc -- ~/workspace/municipal-common-crawl/.venv/bin/mcc mcp`, with `mcc serve` running) so the `mcc_*` path in Step 3 is live.
-- gather_ex: fetches timed out on 2026-10-25, and cityofvacaville.gov's firewall returned "Access Denied" on 2026-10-26; the paste fallback covers both.

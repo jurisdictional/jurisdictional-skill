@@ -1,12 +1,40 @@
 # Listing checklist
 
 How Jurisdictional gets listed where Claude and Grok users find skills and MCP servers.
-Written 2026-11-12 from pages fetched that day; each step links the official doc or form it comes from.
+Written 2026-11-12 from pages fetched that day, brought up to date 2026-11-17; each step links the official doc or form it comes from.
 Anything not read on an official page is marked **unverified**.
 The longer plan, with the milestones and the decisions D1–D9, is `docs/OFFICIAL_SKILL_PLAN.md` in the private jurisdictional repo; this file is the short, current list.
 
 One rule for every listing: the data is ODbL 1.0 with each record under DbCL 1.0 (https://jurisdictional.org/license).
 Never describe it as CC0.
+
+## Ready to submit?
+
+Yes for the plugin bundle, once Ryan answers the open decisions below; the connector follows the same day if D1 allows it.
+Checked 2026-11-17, plugin 0.6.6.
+
+Done:
+
+- `claude plugin validate --strict .` and `--strict .claude-plugin/marketplace.json` both pass with no warnings.
+- Listing URLs in `plugin.json` all answer 200: homepage, documentation (`/skill`), support, privacy, terms, repository; author URL https://civic.studio.
+- Every tool on production has a `title` and its hint: 21 anonymous tools, all `readOnlyHint: true`; signed-in writes carry `readOnlyHint: false` with `destructiveHint`, and admin-only tools are listed to admins only.
+- Tool descriptions are free of internal names (jurisdictional 3e5df62e, 034af4d8).
+- Work leases (`claim_work`, https://github.com/civicstudio/jurisdictional/issues/157 closed) and `send_feedback` are live, and the skill uses both.
+- `/terms` is live; `/terms` and `/privacy` agree on 90 days for request logs, and the server prunes them on that schedule (D7 settled).
+- The README says everything the plugin sends and where, for the security scan.
+- Endpoint is `https://jurisdictional.org/mcp`; publisher is Civic Studio.
+
+Only Ryan can do, in order:
+
+1. Decide D1: list the MCP connector now with its write tools, or read-only first.
+2. Decide D2: which write tools signed-in users get, and whether to turn on `CONTRIBUTION_DAILY_CAP` (live, off by default) before the listing.
+3. Decide D5: keep the plugin at `jurisdictional/jurisdictional-skill`, or move it to `civicstudio/` to match the publisher.
+4. Decide D6: registry namespace `org.jurisdictional` (DNS check) or `io.github.jurisdictional` (GitHub login).
+5. Approve the `/privacy` additions (contact, sign-in data, capture and feedback retention), pending in jurisdictional's inbox as `from-jurisdictional-skill-2026-11-17-privacy-gaps.md`.
+6. Approve the icon at `.claude-plugin/icon.png` (1024 × 1024, upscaled from a 200 px source); the first portal save fixes it as the listing icon.
+7. Submit the plugin bundle at https://claude.ai/directory/manage → Submit new → Plugin bundle, run Validate, and fix any Blocking finding.
+8. Run every tool through MCP Inspector or as a custom connector, then submit the MCP connector at the same portal with a seeded non-admin test account and three example prompts.
+9. Publish the MCP Registry entry (below) once D6 is set.
 
 ## The surfaces
 
@@ -14,7 +42,7 @@ Never describe it as CC0.
 |---|---|---|---|
 | Our own Claude Code marketplace | `.claude-plugin/marketplace.json` in this repo | None; users run `/plugin marketplace add jurisdictional/jurisdictional-skill` | Done |
 | Anthropic directory: plugin bundle | One listing that reaches claude.ai, Cowork and Claude Code; also lands in the `claude-community` marketplace | Developer portal, "Plugin bundle" | Ryan |
-| Anthropic directory: MCP connector | The remote server listed for claude.ai, Desktop, mobile, Cowork and Claude Code | Developer portal, "MCP connector" | Ryan, after one server fix |
+| Anthropic directory: MCP connector | The remote server listed for claude.ai, Desktop, mobile, Cowork and Claude Code | Developer portal, "MCP connector" | Ryan, after D1 |
 | `claude-plugins-official` | Anthropic's default marketplace | No portal path; "ask an Anthropic partner contact" | Ryan, later |
 | MCP Registry | The open metadata registry at registry.modelcontextprotocol.io (preview) | `mcp-publisher` + `server.json` | Ryan (login), prepared below |
 | Grok | No third-party catalog submission found; users add the server by URL, and Grok Build reads Claude Code plugins | grok.com custom connector, Grok Build, xAI API | Ryan to confirm |
@@ -23,64 +51,58 @@ Never describe it as CC0.
 
 ### Done
 
-- Own marketplace: `.claude-plugin/marketplace.json` passes `claude plugin validate --strict .claude-plugin/marketplace.json` (run 2026-11-12). Install is two commands: `/plugin marketplace add jurisdictional/jurisdictional-skill`, `/plugin install jurisdictional@jurisdictional`. Doc: https://code.claude.com/docs/en/plugins/publish (publish through your own marketplace).
-- Plugin manifest: `name` is kebab-case with no reserved word; `version`, `description`, `author`, `homepage`, `repository`, `license` and `keywords` set. Field reference: https://code.claude.com/docs/en/plugins/manifest-reference
-- `LICENSE` file (MIT) and `license` in `plugin.json`. Checklist item: https://claude.com/docs/plugins/pre-submission-checklist
-- README over 40 words with the marketplace install line (the validator's advice check).
-- `.mcp.json` points at an `https://` remote server with no headers and no `headersHelper`; sign-in is the server's OAuth (`claude mcp login plugin:jurisdictional:jurisdictional` in a real terminal, then a new session). The directory accepts `headersHelper`, `bin/` and scripts only from Verified organizations (validator feedback, 2026-11-16), so 0.6.0 removed them.
-- Skill: `skills/gather/SKILL.md` is 381 lines (limit 500), `name` matches its folder, `description` says what and when. Spec: https://agentskills.io/specification
-- Server, checked against production on 2026-11-12:
-  - Streamable HTTP at `https://jurisdictional.org/mcp`; `initialize` answers protocol `2025-06-18`; 20 public tools from `tools/list` with no token.
-  - OAuth: protected resource metadata at `/.well-known/oauth-protected-resource/api/mcp/message` (`resource` equals the MCP URL), authorization server metadata at `/.well-known/oauth-authorization-server` with `code_challenge_methods_supported: ["S256"]`, `registration_endpoint` (DCR) and `token_endpoint_auth_methods_supported: ["none"]`. Requirements: https://claude.com/docs/connectors/building/authentication
-  - Lazy auth: `tools/call` on `propose_change` with no token answers HTTP 401 with `WWW-Authenticate: Bearer resource_metadata="…"`. Doc: https://claude.com/docs/connectors/building/lazy-authentication
-  - Every public tool carries `readOnlyHint: true`.
-- Listing pages live: https://jurisdictional.org/privacy (200), https://jurisdictional.org/support (200, support@jurisdictional.org), https://jurisdictional.org/skill (200), https://jurisdictional.org/license (200).
+- Own marketplace: `.claude-plugin/marketplace.json` passes `claude plugin validate --strict .claude-plugin/marketplace.json` (2026-11-17). Install is two commands: `/plugin marketplace add jurisdictional/jurisdictional-skill`, `/plugin install jurisdictional@jurisdictional`. Doc: https://code.claude.com/docs/en/plugins/publish
+- Plugin: `claude plugin validate --strict .` passes with no warnings (2026-11-17). The repo's Claude Code guidance moved from the root `CLAUDE.md` to `.claude/CLAUDE.md`, which Claude Code still reads as project memory; the validator warns about a root `CLAUDE.md` in a plugin.
+- Plugin manifest: `name` is kebab-case with no reserved word; `version`, `description`, `author` (Civic Studio, https://civic.studio), `homepage`, `repository`, `license`, `keywords`, `documentationUrl`, `supportUrl`, `privacyPolicyUrl` and `termsOfServiceUrl` set. Field reference: https://code.claude.com/docs/en/plugins/manifest-reference
+- `LICENSE` (MIT), README well over 40 words with the install line and a "What the plugin sends" section. Checklist: https://claude.com/docs/plugins/pre-submission-checklist
+- No `.DS_Store`, scripts, `bin/`, `headersHelper`, launchers or lockfiles; only Markdown, JSON, plain text and one PNG. `.mcp.json` is one `type: http` server at an `https://` URL with no headers. The directory accepts `headersHelper`, `bin/` and scripts only from Verified organizations (validator feedback, 2026-11-16).
+- Icon: `.claude-plugin/icon.png`, 1024 × 1024 PNG, 365 KB, transparent background; slightly soft, upscaled (Lanczos) from `priv/static/images/jurisdictional-logo.png` (200 × 200). Swap in an export from the original vector if one turns up, before the first portal save.
+- Skill: `skills/gather/SKILL.md` is 417 lines (limit 500) and keeps its three stops (after Step 2, each Step 4 review, the next target); `name` matches its folder; `description` says what and when. Spec: https://agentskills.io/specification
+- Leases (jurisdictional 6e4c6e93, skill 0.6.2): `claim_work` hands out gather targets with an 8-hour lease and `release_work` hands them back; SKILL.md's "Choosing a next target" and `/gather next` claim with it, and Step 6 releases what the session won't finish. https://github.com/civicstudio/jurisdictional/issues/157 is closed.
+- Feedback (jurisdictional cdf0ab52): `send_feedback` for signed-in users; the skill offers it at the next-target stop, only with text the user approved.
+- Terms (jurisdictional 7dbf572d, https://github.com/civicstudio/jurisdictional/pull/158): https://jurisdictional.org/terms answers 200, linked from the footer and `/skill`.
+- D7, request-log retention: settled at 90 days. `/privacy` says "Each request is kept for 90 days, then deleted", `/terms` says the same, and the server's daily rollup deletes raw rows after 90 days, keeping daily totals.
+- Server, checked against production on 2026-11-17:
+  - Streamable HTTP at `https://jurisdictional.org/mcp` (`/api/mcp/message` stays as an alias); `initialize` answers protocol `2025-06-18`, `serverInfo.version` `1.0.0`; 21 tools from `tools/list` with no token.
+  - OAuth: protected resource metadata at `/.well-known/oauth-protected-resource/mcp` (`resource` equals the MCP URL), authorization server metadata at `/.well-known/oauth-authorization-server` with `code_challenge_methods_supported: ["S256"]`, `registration_endpoint` (DCR) and `token_endpoint_auth_methods_supported: ["none"]`. Requirements: https://claude.com/docs/connectors/building/authentication
+  - Lazy auth: `tools/call` on `propose_change` with no token answers HTTP 401 with `WWW-Authenticate: Bearer resource_metadata="…/oauth-protected-resource/mcp"`. Doc: https://claude.com/docs/connectors/building/lazy-authentication
+- Connector review criteria (https://claude.com/docs/connectors/building/review-criteria), checked 2026-11-17:
+  - Every tool carries `title`, top-level and in its annotations (jurisdictional 2a97b93).
+  - Anonymous: all 21 tools `readOnlyHint: true`.
+  - Signed in: additive writes (`propose_change`, `create_entity`, `import_jurisdiction`, `submit_image`, `claim_work`, `send_feedback` and the rest) carry `readOnlyHint: false, destructiveHint: false`; `gather` reads a page and changes nothing, so it carries `readOnlyHint: true, openWorldHint: true`.
+  - Admin only: tools that delete or write over values on file (`delete_entity`, `merge_entities`, `end_tenure`, `reconcile_roster`, `review_change`, `update_image_credit`, `submit_meeting_pull`) carry `destructiveHint: true`. `delete_entity` and `merge_entities` are now listed to admins only, so a reviewer's non-admin account sees no tool that always refuses (jurisdictional 034af4d8).
+  - Descriptions: no local paths, repo scripts, admin tool names or internal coinages left (jurisdictional 3e5df62e). No catch-all request tool; names under 64 characters; no instructions to call other software.
+- Listing pages live (200 on 2026-11-17): https://jurisdictional.org/privacy, https://jurisdictional.org/support (support@jurisdictional.org), https://jurisdictional.org/terms, https://jurisdictional.org/skill, https://jurisdictional.org/license.
+- Publisher (D5, the company half): Civic Studio is the maker and publisher; Jurisdictional is the app and publishes the data. `author` and marketplace `owner` are Civic Studio; the plugin keeps the name `jurisdictional`.
 
-### Prepared on 2026-11-12 (uncommitted here; Ryan reviews and commits)
+### Plugin bundle (Ryan)
 
-- `.claude-plugin/plugin.json`: added `documentationUrl` (https://jurisdictional.org/skill), `supportUrl` (https://jurisdictional.org/support) and `privacyPolicyUrl` (https://jurisdictional.org/privacy). The directory reads these from `plugin.json`: https://code.claude.com/docs/en/plugins/manifest-reference. This clears the validator's `PRIVACY_URL_MISSING` warning.
-- `.gitignore`: added `.DS_Store`, and removed the stray `.DS_Store` from the working tree (it was never committed). The directory cannot list a plugin that contains one (validator finding `ARCHIVE_OS_METADATA_FILE`).
-- `README.md`: an "Other assistants" note for Grok, plus Privacy and Support links.
-- `/skill` on jurisdictional.org: per-assistant connect and sign-in steps for Claude Code, Grok and any MCP client, and a design pass. Two commits in the jurisdictional worktree, not yet pushed.
-- Validator after these changes: `claude plugin validate .` passes; `--strict` fails only on the root `CLAUDE.md` warning, which is expected per `TESTING.md`.
-- Icon (2026-11-16): `.claude-plugin/icon.png`, 1024 × 1024 PNG with a transparent background: Jurisdictional's blue circle badge, upscaled (Lanczos) from the only source, `priv/static/images/jurisdictional-logo.png` (200 × 200) in the jurisdictional repo. It's slightly soft up close; swap in an export from the original vector if one turns up, before the first portal save fixes the listing icon.
-- Tool titles (2026-11-12): every tool in `tools/list` carries `title`, top-level and in its annotations (jurisdictional commit 2a97b93).
-- Publisher (2026-11-12, Ryan): Civic Studio is the maker and publisher; Jurisdictional is the app and publishes the data. `author` and marketplace `owner` are Civic Studio (https://civic.studio); the plugin keeps the name `jurisdictional`.
+1. **Icon.** Approve `.claude-plugin/icon.png` or replace it: a square PNG or JPEG, 512 to 2048 px, under 2 MB. SVG and WebP are not accepted. The file becomes the listing icon only once, on the first save or submission in the portal.
+2. **Submit** at https://claude.ai/directory/manage → Submit new → Plugin bundle. Needs a paid claude.ai plan and a connected GitHub account with push access to `jurisdictional/jurisdictional-skill` (public). Steps: Source, Validate, Listing details, Data handling, Compliance (a contact email plus four acknowledgements), Review and submit. Limits: 10 submissions per organization per 24 hours, one per repo and folder. Docs: https://claude.com/docs/directory/publish and https://claude.com/docs/plugins/submit
+3. **Review timeline:** not published (**unverified**). New listings are reviewed by a person; every version gets automated validation and a security scan.
+4. Raise `version` in `plugin.json` with every change; the directory follows commits, and a stale version keeps users on old copies.
 
-### Only Ryan can do
+### MCP connector (Ryan, after D1)
 
-Plugin bundle, in order:
-
-1. **Icon.** Prepared, see Done; approve it. A square PNG or JPEG, 512 to 2048 px, under 2 MB, at `.claude-plugin/icon.png` or named by `icon` in `plugin.json`. SVG and WebP are not accepted. The validator says the file becomes the listing icon only once, on the first save or submission in the portal, so pick the final mark first. The only square PNG in the platform repo is `priv/static/images/jurisdictional-logo.png` at 200 × 200, too small; export a 1024 × 1024 version of the mark. Source: `claude plugin validate --strict .` output, 2026-11-12.
-2. **Done (8262a18, 0c08699): commit the pending work in this repo**: the `plugin.json`, `.gitignore` and `README.md` changes above; the uncommitted "post as you go" edit in `skills/gather/SKILL.md` (its own commit); and the sign-in rewrite requested in `.claude/inbox/from-jurisdictional-2026-11-09-mcp-browser-sign-in.md` (done in 0.6.0: browser sign-in via `claude mcp login`; the token file was dropped for the directory rules). Bump `version` in `plugin.json`; the directory follows commits and a stale version keeps users on old copies.
-3. **Decide the write-tool scope (D2 in OFFICIAL_SKILL_PLAN).** Today any signed-in user sees `create_entity` and `import_jurisdiction`, which apply live. The plan recommends listing reads plus `propose_change` only. This is a server change in the jurisdictional repo.
-4. **Done (2a97b93): `title` on every tool.** Production tools carry `readOnlyHint` but no `title`; the connector checklist asks for both, and missing annotations are the most common rejection. Server change in `lib/jurisdictional/mcp`. Checklist: https://claude.com/docs/connectors/building/review-criteria
-5. **Done (jurisdictional 6e4c6e93, skill 0.6.2): leases before submission (https://github.com/civicstudio/jurisdictional/issues/157).** Ryan, 2026-11-17: once the skill is public, two users can pick the same gap and both spend a session on it. The MCP hands out gather work through `claim_work` with an 8-hour lease, and SKILL.md's "Choosing a next target" claims with it and releases what the session won't finish.
-6. **Submit the plugin bundle** at https://claude.ai/directory/manage → Submit new → Plugin bundle. Needs a paid claude.ai plan and a connected GitHub account with push access to `jurisdictional/jurisdictional-skill`. The repo must be public before the listing goes live. Steps are Source, Validate, Listing details, Data handling, Compliance (a contact email plus four acknowledgements), Review and submit. Limits: 10 submissions per organization per 24 hours, one per repo and folder. Docs: https://claude.com/docs/directory/publish and https://claude.com/docs/plugins/submit
-7. **Review timeline:** not published (unverified). New listings are reviewed by a person; every version gets automated validation and a security scan.
-
-MCP connector, after steps 3 and 4:
-
-7. **Submit the connector** at https://claude.ai/directory/manage → Submit new → MCP connector. Doc: https://claude.com/docs/connectors/building/submission. Bring:
+1. **Privacy page.** Approve the `/privacy` additions handed to jurisdictional (`from-jurisdictional-skill-2026-11-17-privacy-gaps.md`): a privacy contact, what sign-in keeps, and retention for captures, feedback and juricode searches. The connector checklist asks a privacy policy to cover collection, use, retention and contact; request logs are already covered.
+2. **Test every tool** through MCP Inspector (https://modelcontextprotocol.io/docs/tools/inspector) and as a custom connector in Claude; the portal's Test & launch step asks you to confirm it.
+3. **Submit** at https://claude.ai/directory/manage → Submit new → MCP connector. Doc: https://claude.com/docs/connectors/building/submission. Bring:
    - listing text within the limits: name ≤ 100 characters, one-liner ≤ 200, description ≤ 2,000, one to five categories;
-   - documentation URL (https://jurisdictional.org/skill or /developers), privacy policy URL (https://jurisdictional.org/privacy), support contact (support@jurisdictional.org), icon;
-   - reviewer test account credentials: a seeded non-admin account on production, with sample data;
+   - documentation URL (https://jurisdictional.org/skill), privacy policy URL (https://jurisdictional.org/privacy), support contact (support@jurisdictional.org), icon;
+   - a seeded non-admin test account on production, for a Verified review;
    - at least three working example prompts (the plan's E1–E6 are candidates, re-verified on the day);
-   - confirmation that you ran every tool yourself through MCP Inspector or as a custom connector;
-   - the seven compliance acknowledgements and the Anthropic Software Directory Terms and Policy: https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy
+   - the compliance acknowledgements and the Anthropic Software Directory Policy: https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy
    - The listing starts as Community; Anthropic may escalate to Verified. Escalations: mcp-review@anthropic.com. Verification doc: https://claude.com/docs/connectors/verification
-8. **Terms of service.** `termsOfServiceUrl` in `plugin.json` is set to https://jurisdictional.org/terms (2026-11-16), which is still 404; the page is handed off to jurisdictional and must be live before submitting. The connector submission lists documentation, privacy, support and icon as required; whether a terms URL is required is **unverified**. `termsOfServiceUrl` is an optional `plugin.json` field. Write `/terms` before submitting if you want it on the listing.
-9. **Privacy policy content.** Confirm https://jurisdictional.org/privacy states what the API logs (`api_requests` keeps IP and user agent) and the retention period; the connector checklist asks for collection, use, retention and contact.
-10. **Publisher identity (D5): decided.** Civic Studio publishes; Jurisdictional is the product. Still open: which GitHub org hosts the plugin repo.
 
-Later:
+### Later
 
-11. **`claude-plugins-official`:** no public process. The publish doc says to ask an Anthropic partner contact: https://code.claude.com/docs/en/plugins/publish. Pursue after a Verified connector and usage numbers.
-12. **Standalone skill listing:** none exists. "Skills aren't a standalone submission type"; the plugin bundle covers it: https://claude.com/docs/directory/publish
+- **`claude-plugins-official`:** no public process. The publish doc says to ask an Anthropic partner contact: https://code.claude.com/docs/en/plugins/publish. Pursue after a Verified connector and usage numbers.
+- **Standalone skill listing:** none exists. "Skills aren't a standalone submission type"; the plugin bundle covers it: https://claude.com/docs/directory/publish
 
 ## MCP Registry (any client, including Grok Build via `grok mcp add`)
 
 Prepared: a `server.json` for a remote-only server. Docs: https://modelcontextprotocol.io/registry/quickstart and https://modelcontextprotocol.io/registry/remote-servers. The registry is in preview; data resets can happen, so keep this file in the repo and re-publish from it.
+The `name` below assumes the GitHub namespace; change it to `org.jurisdictional/jurisdictional` if D6 picks the domain.
 
 ```json
 {
@@ -106,7 +128,7 @@ Only Ryan can do:
 
 1. **Namespace (D6).** `io.github.jurisdictional/…` needs only `mcp-publisher login github` as the `jurisdictional` GitHub org. `org.jurisdictional/…` needs DNS or HTTP verification of jurisdictional.org: https://modelcontextprotocol.io/registry/authentication. The remote-servers doc recommends the domain form when the URL is on a domain you control.
 2. **Publish:** install `mcp-publisher` (`brew install mcp-publisher`), `mcp-publisher validate`, `mcp-publisher login github` (or DNS), `mcp-publisher publish`. Keep `description` at or under 100 characters (the one above is 83). Verify with `curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=jurisdictional"`.
-3. **`version`** should track the server's `serverInfo.version` (production reports `1.0.0`).
+3. **`version`** tracks the server's `serverInfo.version` (production reports `1.0.0`).
 
 ## Grok
 
@@ -138,10 +160,13 @@ Only Ryan can do:
 
 ## Open questions for Ryan (decisions, not tasks)
 
-- D1 listing scope: read-only connector first, or wait for `propose_change` on the listing.
-- D2 public write tools: `propose_change` only, or also `create_entity`, `import_jurisdiction` and `gather` for signed-in users.
-- D4 endpoint URL: decided and live (2026-11-13, jurisdictional f4e30ff): `https://jurisdictional.org/mcp`, with `/api/mcp/message` as a permanent alias. `.mcp.json` and the docs here point at `/mcp`.
-- D5: publisher decided (Civic Studio); GitHub org still open.
-- D6 registry namespace: `io.github.jurisdictional` or `org.jurisdictional`.
-- D7 privacy: request-log retention period, and whether to add a `/terms` page.
+- **D1, connector scope:** list the MCP connector now with its signed-in write tools, or list it read-only first and add writes later?
+- **D2, public write tools:** which writes do signed-in users get: `propose_change` only (reviewed), or also `create_entity`, `import_jurisdiction` and `gather`, which apply live? And should `CONTRIBUTION_DAILY_CAP` (live since jurisdictional 369f52ab, off by default) be set, and to what, before listing? A session on 2026-11-17 wrote "keep the current tools" into this file and a handoff; it is not recorded as Ryan's decision, so confirm it or change it.
+- **D5, GitHub org:** Civic Studio publishes; does the plugin stay at `jurisdictional/jurisdictional-skill`, or move to `civicstudio/` alongside the server repo? Settle it before the first submission, which names the repo.
+- **D6, registry namespace:** `org.jurisdictional` (DNS or HTTP check, matches the server's domain) or `io.github.jurisdictional` (GitHub login only)?
 - Whether to spend a contact on the Grok catalog now.
+
+Settled:
+
+- D4 endpoint URL (2026-11-13, jurisdictional f4e30ff): `https://jurisdictional.org/mcp`, with `/api/mcp/message` as a permanent alias.
+- D7 request-log retention (2026-11-17): 90 days, the same in `/privacy`, `/terms` and the server's pruning; daily totals kept longer. A `/terms` page is live.
