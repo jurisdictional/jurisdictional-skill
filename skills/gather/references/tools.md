@@ -1,14 +1,14 @@
 # Jurisdictional MCP tools — what each one does when contributing
 
-Read 2026-10-26 from the live `tools/list` and the server code; claim_work and release_work added 2026-11-17.
+Read 2026-10-26 from the live `tools/list` and the server code; claim_work, release_work, send_feedback and get_data_source checked 2026-11-17.
 The tool list itself is the source of truth: if a schema here disagrees with the one Claude sees, the live schema wins.
 
 ## Who sees what
 
 | Access | Tools |
 |---|---|
-| **Anyone** (no token; 20 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions, places), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered` |
-| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image` |
+| **Anyone** (no token; 21 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions, places), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered`, `get_data_source` |
+| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image`, `send_feedback` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.

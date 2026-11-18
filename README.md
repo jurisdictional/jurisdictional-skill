@@ -91,6 +91,21 @@ Copy one from [jurisdictional.org/auth/cli](https://jurisdictional.org/auth/cli)
 A configured header takes precedence over the browser sign-in, so remove it if you switch.
 Earlier versions of this plugin read a saved token file; this version signs in through the browser and no longer reads it, so you can delete that file.
 
+## What the plugin sends
+
+The plugin ships no code: it is one skill and the address of Jurisdictional's MCP server, `https://jurisdictional.org/mcp`.
+Everything it sends goes to that server, run by Civic Studio, and nowhere else.
+
+- **The address or place you ask about**, to find the governments that serve it.
+- **Pages to read**: `gather` asks the server to fetch a public government page and returns it to Claude.
+  A page you open in your browser or paste is sent along with a contribution as evidence of what you saw, and kept privately.
+- **Your contributions**, only the values you approve at the review step, each with its source link.
+  They are recorded with your account and published under the [ODbL 1.0](https://jurisdictional.org/license), each record under the DbCL 1.0.
+- **Feedback**, only when you approve the exact text, stored with your account for the team and never published.
+
+What the server records and how long it keeps it: [jurisdictional.org/privacy](https://jurisdictional.org/privacy).
+Terms of use: [jurisdictional.org/terms](https://jurisdictional.org/terms).
+
 ## What you can contribute
 
 | Contribution | How it lands |
