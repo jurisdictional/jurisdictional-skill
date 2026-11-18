@@ -8,7 +8,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | Access | Tools |
 |---|---|
 | **Anyone** (no token; 21 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions, places), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered`, `get_data_source` |
-| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_civicplus_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image`, `send_feedback` |
+| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image`, `send_feedback` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
@@ -158,7 +158,7 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
   Matched (`existing`) rows get no claims.
 - Positions and people are not part of it: seat officials afterwards with `create_entity` or `reconcile_roster`.
 
-`import_civicplus_directory` is for admins working from the jurisdictional repo's import script; skip it in conversation.
+`import_directory` (with `platform`, e.g. `"civicplus"`) imports a site's staff directory; it is for admins, so skip it in conversation.
 
 ### Rosters (admin): `reconcile_roster`, `end_tenure`, `link_district_seats`
 
