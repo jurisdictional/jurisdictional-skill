@@ -257,7 +257,7 @@ Ready to submit for Vacaville Police Department (agency #1234):
 Ask with `AskUserQuestion`: "Submit all 4", "Let me change some", "Skip this one".
 
 The **Lands** column says what each write does, because they behave differently:
-- **New entity** (`create_entity`, `import_jurisdiction`): live immediately, with no review. Be most careful here.
+- **New entity** (`create_entity`, `import_jurisdiction`): live immediately for admins and trusted contributors; for others it is suggested (hidden) until an admin reviews it — the response says `review_status: "suggested"`. Be most careful here.
 - **Change to an existing field** (`propose_change`): queued for human review.
 - **Same value from a new source**: recorded as corroboration, no review.
 
@@ -367,9 +367,9 @@ Session complete — 12 writes across 4 entities:
   Entity                        Writes  Status
   ──────                        ──────  ──────
   Vacaville Police Department   3       2 pending review, 1 corroborated
-  Parks & Recreation (new)      4       live
+  Parks & Recreation (new)      4       live (or: suggested, pending review)
   City Council                  2       pending review
-  Utility Bill Pay (new)        3       live
+  Utility Bill Pay (new)        3       live (or: suggested, pending review)
 
   Not found: council term end dates (not published); fire dept. email.
   Your contributions: https://jurisdictional.org/users/contributions
@@ -409,7 +409,7 @@ Offer two or three with `AskUserQuestion`, each with what it's missing ("<name>,
 - **Be specific about impact.** "Adding this meeting schedule means anyone in Vacaville can find when their council meets" beats "this data is useful."
 - **Coverage is the scoreboard.** Name the rung and tier before and after, and what would move it up next.
 - **Services are the payoff layer.** Agencies and officials are scaffolding; a jurisdiction with 18 agencies and 0 services is an org chart, not coverage.
-- **New entities go live; edits get reviewed.** Take the most care with `create_entity` and `import_jurisdiction`.
+- **New entities go live for admins and trusted contributors; for others they're suggested and reviewed. Edits get reviewed.** Take the most care with `create_entity` and `import_jurisdiction`, and report a suggested record as suggested, not live.
 - **Source hierarchy.** The government's own site (via `gather`) first; then other official sites (a state municipal league, the county); then news; then the user's local knowledge, attributed as "user-provided". Search snippets and training data are never sources.
 - **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them, and ask where it's published.
 - **Post as you go.** A contribution is written when its page has been read. Do not batch the jurisdiction for one submission at the end.

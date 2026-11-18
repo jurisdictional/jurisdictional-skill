@@ -109,7 +109,11 @@ A bad shape or a mismatched `sha256` fails the call, and nothing is written.
 ### `create_entity` — one new entity
 
 Always search first (`search_agencies`, `search_bodies`, `search_services`, `search_people`, `search_positions`).
-Every field set on the new row is recorded as a claim citing `source_url`, and is **live immediately**, with no review.
+Every field set on the new row is recorded as a claim citing `source_url`.
+For admins and trusted contributors the new row is **live immediately**, with no review.
+When the server limits live writes to trusted contributors, anyone else's new row is **suggested**: hidden from public pages, the API, MCP reads and exports until an admin reviews it.
+The response then carries `review_status: "suggested"` and `review: {status: "pending", entity_type, entity_id, change_id, contributions_url, message}`; report it as suggested and pending review, never as live.
+A suggested row's id still works as a parent (`agency_id`, `body_id`, `position_id`) in your next `create_entity` calls, though reads like `search_agencies` won't show it.
 `source_url` is only cited — it never becomes a link. Live links are their own arguments: `website_url` (agency) and `online_url` (service).
 
 | entity_type | Needs | Notes |
@@ -157,8 +161,9 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
   Give an item its own `source_url` whenever its values came from a different page than the top-level one.
   Matched (`existing`) rows get no claims.
 - Positions and people are not part of it: seat officials afterwards with `create_entity` or `reconcile_roster`.
+- Created rows follow `create_entity`'s rule: live for admins and trusted contributors, otherwise suggested, with each created ref carrying `review_status: "suggested"` and its review `change_id`.
 
-`import_directory` (with `platform`, e.g. `"civicplus"`) imports a site's staff directory; it is for admins, so skip it in conversation.
+`import_directory` (with `platform`, e.g. `"civicplus"`) imports a site's staff directory; it is for admins and trusted contributors, so skip it in conversation.
 
 ### Rosters (admin): `reconcile_roster`, `end_tenure`, `link_district_seats`
 
