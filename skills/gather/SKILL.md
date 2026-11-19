@@ -210,7 +210,7 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   A body's phone and email are its own, usually the clerk's, not the staffing agency's.
   An official's office phone and official email come from their bio or roster entry; never a personal or campaign contact.
   Agencies and bodies take them in `import_jurisdiction`; for existing entities or people, `propose_changes` sends every value read on one page (a roster's phones and emails) in one call, up to 50.
-  When the page truly publishes none, say so in the summary; an admin records it with `record_field_absence` (agency phone or email, body phone or email).
+  When the page truly publishes none, say so in the summary; an admin records it with `record_field_absence` (the fields it takes are in [tools.md](references/tools.md)).
 - **Social accounts, every layer:** take the official X, Facebook, Instagram, YouTube, LinkedIn and Nextdoor links a page shows (Nextdoor only as an agency page, `nextdoor.com/agency-detail/<state>/<city>/<agency>/`), and write each with `create_entity` (`entity_type: "social_account"`, `url` as the page gives it, `source_url` the page, `jurisdiction_id`).
   The owner follows the page: a site-wide header or footer link is the government's (no owner); a department page's link is that agency's (`agency_id`); a council page's is the body's (`body_id`); an officeholder's bio page gives `person_id` for their own account, or `position_id` for an office account that passes holder to holder (@MayorOf…).
   Official accounts only: skip vendors, foundations, campaigns and personal accounts, and share, intent or post links.
@@ -226,9 +226,10 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   City logos and flags on a page you fetched are noted the same way.
   All of them are submitted in Step 6.
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
-- **Website pages, every layer:** record each page kind the site has: the meetings calendar, agendas, minutes, adopted budget, ACFR or audit (`financial_report`), municipal code, open data portal and `/data.json`; for federal agencies also about, `/open`, FOIA, privacy, accessibility, vulnerability disclosure, No FEAR Act and inspector general.
+- **Website pages, every layer:** record each page kind the site has: the meetings calendar, agendas, minutes, adopted budget, ACFR or audit (`financial_report`), municipal code, open data portal, `/data.json` and a developer API (`api`: its documentation or base URL); for federal agencies also about, `/open`, FOIA, privacy, accessibility, vulnerability disclosure, No FEAR Act and inspector general.
   Open each page and confirm it is that page before recording it, then write one `create_entity` (`entity_type: "page"`) per kind; see [tools.md](references/tools.md).
   The kind list grows, so read an unknown-kind error for the current list rather than guessing.
+  When a government's site has no page of a tracked kind (budget, financial_report, meetings, agendas, open_data, api), say so in the summary instead of skipping it; an admin records `record_field_absence` with `field_name: "<kind>_page"` (`api_page`), so the target leaves the queue for 6 months.
   A body keeps its own `meeting_url`; a jurisdiction-wide meetings portal is a `meetings` page on the jurisdiction.
 - **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
@@ -389,7 +390,7 @@ In this order:
 
 1. **Another government at this address** below `served` or below Gold, from Step 2's table. The user lives there, so the gap is theirs.
 2. **Claimed work.** Anywhere else, pick targets with `claim_work` rather than from a list, so no one else is handed the same gap: `claim_work(kind: "no_agencies", state: "CA", n: 3)` gives the largest places and counties with no agencies yet.
-   The other kinds are `jurisdiction_website_missing`, `agency_phone_missing` and `statewide_seat_unlinked`.
+   The other kinds are `jurisdiction_website_missing`, `agency_phone_missing` and `statewide_seat_unlinked`, and the county kinds, website first: `county_website_missing`, `county_body_missing`, `county_seats_unheld`, `county_page_missing:<kind>` and `county_social_missing` (see [tools.md](references/tools.md)).
    Each target is leased to the user for 8 hours and carries a `lease_id` and a `hint` naming the write that fills it (`propose_change phone`); that write ends the lease on its own.
    Once the user picks one, `release_work` the leases on the others straight away.
    `claim_work` needs sign-in; if the user isn't signed in, offer it, as in the preflight.

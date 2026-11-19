@@ -1,6 +1,6 @@
 # Jurisdictional MCP tools — what each one does when contributing
 
-Read 2026-10-26 from the live `tools/list` and the server code; claim_work, release_work, send_feedback and get_data_source checked 2026-11-17.
+Read 2026-10-26 from the live `tools/list` and the server code; claim_work, release_work, send_feedback and get_data_source checked 2026-11-17; the `api` page kind, county claim_work kinds and record_field_absence fields checked 2026-11-18.
 The tool list itself is the source of truth: if a schema here disagrees with the one Claude sees, the live schema wins.
 
 ## Who sees what
@@ -9,7 +9,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 |---|---|
 | **Anyone** (no token; 21 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions, places), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered`, `get_data_source` |
 | **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image`, `send_feedback` |
-| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
+| **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `record_field_absence`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
 No token: 100 requests a day per IP (live since 2026-10-26), shared by everyone behind that address; one address's Step 2 costs about 10.
@@ -48,6 +48,8 @@ If `reconcile_roster` is not in it, they are not an admin — use the non-admin 
 Signed in only.
 - `claim_work(kind, state?, n?)` leases up to `n` targets (1–10, default 5) that nobody else holds, for 8 hours each.
   Kinds: `no_agencies` (a governing place or county with no agencies, largest first), `jurisdiction_website_missing` (a government with agencies but no website), `agency_phone_missing` (an agency with no phone), `statewide_seat_unlinked` (a statewide office not linked to its state with `electing_jurisdiction_id`).
+  County kinds cover the county governments component by component, website first: `county_website_missing` (no website), `county_body_missing` (agencies but no governing board), `county_seats_unheld` (a county body with no current seat holder; these targets are bodies), `county_page_missing:<kind>` for budget, financial_report, meetings, agendas, open_data and api (a county with a website and no page of that kind), and `county_social_missing` (no confirmed social account).
+  A county target is done when the value is on file, in review, or recorded absent with `record_field_absence` (its hint names both).
   Returns `claimed` (each with `id`, `entity_type`, `name`, `jurisdiction`, `website`, `hint`, `lease_id`, `lease_expires_at`) and `open_leases`; an empty `claimed` means no open targets of that kind there.
 - The write the `hint` names (`propose_change phone`, `import_jurisdiction`) ends the lease on its own once the target is filled, in review, or recorded as blocked or absent.
   A lease nobody finishes expires after 8 hours and the target goes back out.
@@ -125,7 +127,7 @@ A suggested row's id still works as a parent (`agency_id`, `body_id`, `position_
 | person | `jurisdiction_id`; `position_id` to seat them | Use `first_name`/`last_name` exactly as published. With `position_id`, a tenure is created and **`source_url` is required** (the roster or bio page). `start_date` and `term_ends_on` only when the source publishes them. Re-creating a person who already holds the seat refreshes that tenure's source instead of adding a second one. |
 | meeting | `jurisdiction_id`, `body_id`, `start_time` | `agenda_url`, `minutes_url`, `video_url`, `status` (scheduled, completed, cancelled, postponed), `external_id` (eScribe GUID, Granicus clip id). |
 | agenda_item | `jurisdiction_id`, `meeting_id` | |
-| page | `jurisdiction_id`, `kind`, `url`, `source_url` | No `name`. A government website page by what it is for. `kind` today: meetings, agendas, minutes, budget, financial_report (ACFR, CAFR, audits), municipal_code, open_data (a portal people browse), data_json (the DCAT-US catalog at /data.json), about, open, foia, privacy, accessibility, vulnerability_disclosure, no_fear_act, inspector_general, digital_strategy; the list grows, and an unknown kind is an error naming the valid ones. Add `agency_id` (a department's own FOIA or budget page) or `body_id` (a council's own minutes page), one of them and in that jurisdiction; without either, the jurisdiction owns it. `source_url` is the page you read, usually the page itself. A page on a vendor host (eScribe, Granicus, Legistar) takes `source_key: "vendor_platforms"`. One page serving two kinds is two calls; the same owner, kind and url returns `duplicate: true`, so re-runs are safe. `jurisdictions.budget_url` moved here as kind `budget`. |
+| page | `jurisdiction_id`, `kind`, `url`, `source_url` | No `name`. A government website page by what it is for. `kind` today: meetings, agendas, minutes, budget, financial_report (ACFR, CAFR, audits), municipal_code, open_data (a portal people browse), data_json (the DCAT-US catalog at /data.json), api (a developer API programs call: its documentation or base URL, such as a Socrata, ArcGIS REST or Legistar web API), about, open, foia, privacy, accessibility, vulnerability_disclosure, no_fear_act, inspector_general, digital_strategy; the list grows, and an unknown kind is an error naming the valid ones. Add `agency_id` (a department's own FOIA or budget page) or `body_id` (a council's own minutes page), one of them and in that jurisdiction; without either, the jurisdiction owns it. `source_url` is the page you read, usually the page itself. A page on a vendor host (eScribe, Granicus, Legistar) takes `source_key: "vendor_platforms"`. One page serving two kinds is two calls; the same owner, kind and url returns `duplicate: true`, so re-runs are safe. `jurisdictions.budget_url` moved here as kind `budget`. |
 | place | `jurisdiction_id`, `place_type`, `name`, `source_url` | `place_type`: park, library, school, community_center. Optional `managing_agency_id`, `website_url`, `street_address`, `city`, `state`, `zip_code`, `phone`, `latitude`, `longitude`, `description`. The same name and type in the jurisdiction returns the existing place with `duplicate: true`. |
 
 `source_key` names the source's registry entry, default `municipal_official_sites` (a government's own site).
@@ -223,6 +225,10 @@ Non-admins leave candidates for an admin and list them in the session summary.
 - `get_change_status(change_ids: [...])` → pending, approved, published or rejected for each; `not_found` for an unknown id.
 - `record_coverage_gap(jurisdiction_id, reason, evidence_url, detail)` (admin) marks a jurisdiction as blocked so `get_next_uncovered` skips it.
   Reasons: cloudflare_challenge, no_website, dead_host, parked_domain, takeover, blocked_403, no_department_links, other.
+- `record_field_absence(entity_type, entity_id, field_name, evidence_url, method, checked_on?, notes?, source_key?)` (admin) records that the government's own page publishes no value for a blank field, after reading it; a blocked or dead site is a coverage gap instead, and a value you couldn't find is not an absence.
+  Fields: agency `phone`, `email`, `website_url`; body `meeting_url`, `phone`, `email`, `current_members`; position `current_holder`, `electing_jurisdiction_id`; jurisdiction `website`, `governing_body`, `social_accounts` and `<kind>_page` for budget, financial_report, meetings, agendas, open_data and api (`financial_report_page`: a county with no ACFR).
+  `method`: scripted, gather, browser or by_hand.
+  It counts as a known miss for 6 months from `checked_on`, and `claim_work` stops handing the target out; recording again replaces the check, and a value written later supersedes it.
 
 ### Cleanup (admin)
 
