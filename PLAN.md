@@ -5,7 +5,7 @@ This file only says what's done here and what's next, so no second plan forks.
 
 ## Now
 
-Directory submission (plugin 0.6.6, 2026-11-17). `claude plugin validate --strict .` passes with no warnings, every listing URL answers, and every production tool carries its title and hints; Ryan answers D1, D2, D5 and D6 and submits (LISTING_CHECKLIST.md, "Ready to submit?").
+Directory submission (plugin 0.6.6, 2026-11-17). `claude plugin validate --strict .` passes with no warnings, every listing URL answers, and every production tool carries its title and hints; Ryan answers D1, D6 and the D2 details and submits (LISTING_CHECKLIST.md, "Ready to submit?").
 Installed on Ryan's machine from this checkout (`claude plugin marketplace add <this repo>`), so edits here are the live skill.
 
 Done in this repo:
@@ -26,7 +26,8 @@ Next:
 - Done in jurisdictional 2026-11-17: `/terms` (7dbf572d) and the sign-in wording on `/skill`, `docs/API.md` and `llms.txt` (25fb8a6f).
 - Waiting on jurisdictional: the privacy page gaps (handoff 2026-11-17).
 - Done in jurisdictional 2026-11-17: tool descriptions without internal names (3e5df62e); `delete_entity` and `merge_entities` listed to admins only, `gather` read-only, overwriting admin tools destructive (034af4d8).
-- Open for Ryan: D1, D2 (write tools and the daily cap), D5 (GitHub org), D6. An earlier session recorded D2 and D5 as decided; that is not Ryan's recorded decision, so they stay open.
+- Decided by Ryan: D5 keeps `jurisdictional/jurisdictional-skill` (2026-11-17, confirmed 2026-11-18); D2's direction is proposal-first, with every contributor change reviewed (2026-11-18), and its details are still open.
+- Open for Ryan: D1, D6, and the D2 details.
 - Ryan: submit the plugin bundle, then the MCP connector.
 - Run TESTING.md T1–T12 in a live interactive session and record the results here.
   It also covers live checks for captures in review, services with both fields, and a city's meetings and budget pages.

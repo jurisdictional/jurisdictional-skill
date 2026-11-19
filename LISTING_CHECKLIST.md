@@ -27,8 +27,8 @@ Done:
 Only Ryan can do, in order:
 
 1. Decide D1: list the MCP connector now with its write tools, or read-only first.
-2. Decide D2: which write tools signed-in users get, and whether to turn on `CONTRIBUTION_DAILY_CAP` (live, off by default) before the listing.
-3. Decide D5: keep the plugin at `jurisdictional/jurisdictional-skill`, or move it to `civicstudio/` to match the publisher.
+2. D2, direction decided by Ryan 2026-11-18: changes come through proposals. Signed-in contributors' writes are reviewed before they go live; the details (admins, trusted contributors, `CONTRIBUTION_DAILY_CAP`) are still being settled.
+3. Done (Ryan, 2026-11-17, confirmed 2026-11-18), D5: the plugin stays at `jurisdictional/jurisdictional-skill`; Civic Studio is the publisher.
 4. Decide D6: registry namespace `org.jurisdictional` (DNS check) or `io.github.jurisdictional` (GitHub login).
 5. Approve the `/privacy` additions (contact, sign-in data, capture and feedback retention), pending in jurisdictional's inbox as `from-jurisdictional-skill-2026-11-17-privacy-gaps.md`.
 6. Approve the icon at `.claude-plugin/icon.png` (1024 × 1024, upscaled from a 200 px source); the first portal save fixes it as the listing icon.
@@ -161,8 +161,8 @@ Only Ryan can do:
 ## Open questions for Ryan (decisions, not tasks)
 
 - **D1, connector scope:** list the MCP connector now with its signed-in write tools, or list it read-only first and add writes later?
-- **D2, public write tools:** which writes do signed-in users get: `propose_change` only (reviewed), or also `create_entity`, `import_jurisdiction` and `gather`, which apply live? And should `CONTRIBUTION_DAILY_CAP` (live since jurisdictional 369f52ab, off by default) be set, and to what, before listing? A session on 2026-11-17 wrote "keep the current tools" into this file and a handoff; it is not recorded as Ryan's decision, so confirm it or change it.
-- **D5, GitHub org:** Civic Studio publishes; does the plugin stay at `jurisdictional/jurisdictional-skill`, or move to `civicstudio/` alongside the server repo? Settle it before the first submission, which names the repo.
+- **D2, public write tools:** direction decided (Ryan, 2026-11-18): changes come through proposals, reviewed before they go live. Still open: whether admins and trusted contributors keep live writes, and whether to turn on `CONTRIBUTION_DAILY_CAP`.
+- **D5, GitHub org:** decided: the plugin stays at `jurisdictional/jurisdictional-skill` (Ryan, 2026-11-17, confirmed 2026-11-18).
 - **D6, registry namespace:** `org.jurisdictional` (DNS or HTTP check, matches the server's domain) or `io.github.jurisdictional` (GitHub login only)?
 - Whether to spend a contact on the Grok catalog now.
 
