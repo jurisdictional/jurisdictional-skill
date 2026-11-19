@@ -128,6 +128,7 @@ Keep any `task_id`; Step 6 closes them.
 `tier` is the finer grade: `uncovered` → **Bronze** "Claimed" (a governing body) → **Silver** "Structured" (5+ agencies with websites) → **Gold** "Staffed" (that, plus seats with people in them).
 Past Gold, `quality` names what's missing: agencies without phone, email or website.
 A district's tier is about its seats instead: Gold when every seat it elects has a current holder.
+A county's or school district's `elected_seats` counts only the seats it elects at large (sheriff, assessor); supervisors or trustees elected by district count under their districts, so 0 there doesn't mean the board is empty — `get_body_details` shows who is seated.
 
 **Show the stack as one table**, worst-covered first among the governments, with the single most useful gap for each (this shows the format; every number comes from `get_coverage`):
 
@@ -151,6 +152,8 @@ An admin can link a whole county board's or city council's district seats at onc
 For "who represents me", call `explore(focus: "people", jurisdiction_ids: [<the district layers>])`.
 
 Then recommend one gap, the lowest rung first, and say what it would change: "California has no services at all — adding the DMV and state tax services would take it from governed to served."
+**When every layer is served · Gold**, the ladder has nothing left to say, so rank what's past it: the largest `quality` gap (the most agencies or bodies missing a phone, email or website), then any district with a seat not linked by `electing_jurisdiction_id`, then a roster with no source or `verified_on`.
+Recommend the top one, and offer [Choosing a next target](#choosing-a-next-target) as another option.
 Ask with `AskUserQuestion`: the recommended gap, one or two others from the table, and "Just exploring".
 If they asked a question, answer it first. If they only want to explore, stay here — drill in with `explore(focus: "agencies" | "bodies" | "people" | "services", jurisdiction_ids: [...])` and `get_body_details`. That is a complete session.
 For "what's near me?", use the geocode from `set_location` with `find_services_near_point` or `find_agencies_near_point(lat, lng, radius_meters)`.
