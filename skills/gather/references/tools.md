@@ -1,6 +1,6 @@
 # Jurisdictional MCP tools — what each one does when contributing
 
-Read 2026-10-26 from the live `tools/list` and the server code; claim_work, release_work, send_feedback and get_data_source checked 2026-11-17; the `api` page kind, county claim_work kinds and record_field_absence fields checked 2026-11-18.
+Read 2026-10-26 from the live `tools/list` and the server code; claim_work, release_work, send_feedback and get_data_source checked 2026-11-17; the `api` page kind, county claim_work kinds, record_field_absence fields and register_meeting_source checked 2026-11-18.
 The tool list itself is the source of truth: if a schema here disagrees with the one Claude sees, the live schema wins.
 
 ## Who sees what
@@ -8,7 +8,7 @@ The tool list itself is the source of truth: if a schema here disagrees with the
 | Access | Tools |
 |---|---|
 | **Anyone** (no token; 21 tools) | `set_location`, `explore`, `search_*` (jurisdictions, agencies, services, people, bodies, positions, places), `get_*_details` (jurisdiction, agency, service, person, body), `find_*_at_point`/`_near_point`, `get_coverage`, `get_pending_tasks`, `get_next_uncovered`, `get_data_source` |
-| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_directory`, `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image`, `send_feedback` |
+| **Signed in** | `claim_work`, `release_work`, `gather`, `propose_change`, `propose_changes`, `create_entity`, `import_jurisdiction`, `import_directory` and `register_meeting_source` (admins and trusted contributors), `get_change_status`, `submit_sourcing_result`, `submit_image`, `get_image`, `send_feedback` |
 | **Admin** | `delete_entity`, `merge_entities`, `reconcile_roster`, `end_tenure`, `link_district_seats`, `approve_image`, `record_coverage_gap`, `record_field_absence`, `list_data_sources`, `get_coverage_stats`, `get_integrity_report`, and other read-only reports |
 
 **Limits.** Admins are unlimited. A free key gets 2,000 reads per UTC day; contributions (`gather`, every write, `get_change_status`, the image tools) aren't counted.
@@ -166,6 +166,16 @@ import_jurisdiction(jurisdiction_id: 70118, dry_run: true, source_url: "<the dep
 - Created rows follow `create_entity`'s rule: live for admins and trusted contributors, otherwise suggested, with each created ref carrying `review_status: "suggested"` and its review `change_id`.
 
 `import_directory` (with `platform`, e.g. `"civicplus"`) imports a site's staff directory; it is for admins and trusted contributors, so skip it in conversation.
+
+### Meeting feeds: `register_meeting_source`
+
+Admins and trusted contributors only; for anyone else it is not in the tool list, so propose the body's `meeting_url` with `propose_change` and an admin reviews it.
+- `register_meeting_source(body_id, url, legistar_body_id?, panel?, meeting_type?, dry_run?)` turns a body's meeting page into a feed the server pulls every 24 hours, so its meetings arrive on their own instead of by hand.
+- Vendors, read from the URL: Legistar (`<client>.legistar.com`), Granicus (`<site>.granicus.com/ViewPublisher.php?view_id=N`, or any page of that view), eScribe (`<host>.escribemeetings.com`), CivicClerk (`<tenant>.portal.civicclerk.com`, with `?category_id=N` when the page has one) and CivicPlus AgendaCenter (`<site>/AgendaCenter`, or a board's category page `/AgendaCenter/<Board-Name>-<N>`).
+- Pass the most specific URL: a Legistar `DepartmentDetail.aspx?ID=` page, an AgendaCenter category page, a CivicClerk `?category_id=` link.
+  A Granicus view, eScribe host, CivicClerk portal or AgendaCenter root serves every board, and is narrowed to the body's name unless `panel` (Granicus) or `meeting_type` (eScribe) names it; a wrong guess shows up later as a failed feed.
+- Returns `action`: `created`, `exists` (this body already has that feed; nothing to do) or `would_create` (`dry_run`), with the `source`.
+- Errors: a feed registered to another body; a Legistar name with no unique match, listing `BodyId Name` candidates (pick one and call again with `legistar_body_id`); an unknown vendor, naming the supported ones (then enter meetings with `create_entity` as before).
 
 ### Rosters (admin): `reconcile_roster`, `end_tenure`, `link_district_seats`
 

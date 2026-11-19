@@ -226,6 +226,8 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   City logos and flags on a page you fetched are noted the same way.
   All of them are submitted in Step 6.
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
+  When that page is on Legistar, Granicus, eScribe, CivicClerk or a CivicPlus AgendaCenter, record the body's `meeting_url` and register the page as a feed with `register_meeting_source` (most specific URL, `dry_run` first), so its meetings arrive on their own; don't enter that body's meetings by hand.
+  Hand-enter meetings with `create_entity` only for other platforms and one-off meetings; without `register_meeting_source` in the tool list, propose the `meeting_url` and stop there. See [tools.md](references/tools.md).
 - **Website pages, every layer:** record each page kind the site has: the meetings calendar, agendas, minutes, adopted budget, ACFR or audit (`financial_report`), municipal code, open data portal, `/data.json` and a developer API (`api`: its documentation or base URL); for federal agencies also about, `/open`, FOIA, privacy, accessibility, vulnerability disclosure, No FEAR Act and inspector general.
   Open each page and confirm it is that page before recording it, then write one `create_entity` (`entity_type: "page"`) per kind; see [tools.md](references/tools.md).
   The kind list grows, so read an unknown-kind error for the current list rather than guessing.
@@ -292,7 +294,8 @@ The same goes for `search_bodies`, `search_services`, `search_positions` (by `bo
 | Seating a person | `create_entity(entity_type: "person", position_id, source_url, start_date?, term_ends_on?)` |
 | A whole roster changed (admin) | `reconcile_roster` — dry run first, show the plan, then apply |
 | Someone left a seat (admin) | `end_tenure` with the page that shows it; otherwise note it for an admin |
-| A meeting or agenda item | `create_entity(entity_type: "meeting", body_id, start_time, agenda_url, minutes_url, video_url)` |
+| A body's meeting page on Legistar, Granicus, eScribe, CivicClerk or AgendaCenter | `register_meeting_source(body_id, url, dry_run: true)`, then for real; expect `action: "created"` or `"exists"` |
+| A meeting or agenda item on another platform, or a one-off | `create_entity(entity_type: "meeting", body_id, start_time, agenda_url, minutes_url, video_url)` |
 | A website page by what it is for (meetings, budget, FOIA…) | `create_entity(entity_type: "page", kind, url, source_url, jurisdiction_id, agency_id? or body_id?)`, once per kind |
 | An official's photo, or a seal, logo or flag | `submit_image` (private review queue) |
 
