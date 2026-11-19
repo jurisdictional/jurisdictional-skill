@@ -30,7 +30,7 @@ Only Ryan can do, in order:
 2. D2, direction decided by Ryan 2026-11-18: changes come through proposals. Signed-in contributors' writes are reviewed before they go live; the details (admins, trusted contributors, `CONTRIBUTION_DAILY_CAP`) are still being settled.
 3. Done (Ryan, 2026-11-17, confirmed 2026-11-18), D5: the plugin stays at `jurisdictional/jurisdictional-skill`; Civic Studio is the publisher.
 4. Decide D6: registry namespace `org.jurisdictional` (DNS check) or `io.github.jurisdictional` (GitHub login).
-5. Approve the `/privacy` additions (contact, sign-in data, capture and feedback retention), pending in jurisdictional's inbox as `from-jurisdictional-skill-2026-11-17-privacy-gaps.md`.
+5. Done (https://github.com/civicstudio/jurisdictional/pull/162, merged by Ryan 2026-11-19, live): `/privacy` has a contact (support@jurisdictional.org), what sign-in keeps, and retention for captures, feedback and juricode searches.
 6. Approve the icon at `.claude-plugin/icon.png` (1024 × 1024, upscaled from a 200 px source); the first portal save fixes it as the listing icon.
 7. Submit the plugin bundle at https://claude.ai/directory/manage → Submit new → Plugin bundle, run Validate, and fix any Blocking finding.
 8. Run every tool through MCP Inspector or as a custom connector, then submit the MCP connector at the same portal with a seeded non-admin test account and three example prompts.
@@ -84,7 +84,7 @@ Only Ryan can do, in order:
 
 ### MCP connector (Ryan, after D1)
 
-1. **Privacy page.** Approve the `/privacy` additions handed to jurisdictional (`from-jurisdictional-skill-2026-11-17-privacy-gaps.md`): a privacy contact, what sign-in keeps, and retention for captures, feedback and juricode searches. The connector checklist asks a privacy policy to cover collection, use, retention and contact; request logs are already covered.
+1. Done (https://github.com/civicstudio/jurisdictional/pull/162, merged by Ryan 2026-11-19, live): `/privacy` has a contact (support@jurisdictional.org), what sign-in keeps, and retention for captures, feedback and juricode searches.
 2. **Test every tool** through MCP Inspector (https://modelcontextprotocol.io/docs/tools/inspector) and as a custom connector in Claude; the portal's Test & launch step asks you to confirm it.
 3. **Submit** at https://claude.ai/directory/manage → Submit new → MCP connector. Doc: https://claude.com/docs/connectors/building/submission. Bring:
    - listing text within the limits: name ≤ 100 characters, one-liner ≤ 200, description ≤ 2,000, one to five categories;
