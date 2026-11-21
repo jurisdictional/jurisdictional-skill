@@ -11,7 +11,7 @@ Never describe it as CC0.
 ## Ready to submit?
 
 Yes for the plugin bundle, once Ryan answers the open decisions below; the connector follows the same day if D1 allows it.
-Checked 2026-11-17, plugin 0.6.6.
+Checked 2026-11-17, plugin 0.6.6; the portal's Validate on 2026-11-20 passed with three policy holds, addressed in 0.6.15 (rerun Validate after the push).
 
 Done:
 
@@ -31,7 +31,7 @@ Only Ryan can do, in order:
 3. Done (Ryan, 2026-11-17, confirmed 2026-11-18), D5: the plugin stays at `jurisdictional/jurisdictional-skill`; Civic Studio is the publisher.
 4. Decide D6: registry namespace `org.jurisdictional` (DNS check) or `io.github.jurisdictional` (GitHub login).
 5. Done (https://github.com/civicstudio/jurisdictional/pull/162, merged by Ryan 2026-11-19, live): `/privacy` has a contact (support@jurisdictional.org), what sign-in keeps, and retention for captures, feedback and juricode searches.
-6. Approve the icon at `.claude-plugin/icon.png` (1024 × 1024, upscaled from a 200 px source); the first portal save fixes it as the listing icon.
+6. Approve the plugin icon in `.claude-plugin/` (1024 × 1024, upscaled from a 200 px source); the first portal save fixes it as the listing icon.
 7. Submit the plugin bundle at https://claude.ai/directory/manage → Submit new → Plugin bundle, run Validate, and fix any Blocking finding.
 8. Run every tool through MCP Inspector or as a custom connector, then submit the MCP connector at the same portal with a seeded non-admin test account and three example prompts.
 9. Publish the MCP Registry entry (below) once D6 is set.
@@ -56,16 +56,16 @@ Only Ryan can do, in order:
 - Plugin manifest: `name` is kebab-case with no reserved word; `version`, `description`, `author` (Civic Studio, https://civic.studio), `homepage`, `repository`, `license`, `keywords`, `documentationUrl`, `supportUrl`, `privacyPolicyUrl` and `termsOfServiceUrl` set. Field reference: https://code.claude.com/docs/en/plugins/manifest-reference
 - `LICENSE` (MIT), README well over 40 words with the install line and a "What the plugin sends" section. Checklist: https://claude.com/docs/plugins/pre-submission-checklist
 - No `.DS_Store`, scripts, `bin/`, `headersHelper`, launchers or lockfiles; only Markdown, JSON, plain text and one PNG. `.mcp.json` is one `type: http` server at an `https://` URL with no headers. The directory accepts `headersHelper`, `bin/` and scripts only from Verified organizations (validator feedback, 2026-11-16).
-- Icon: `.claude-plugin/icon.png`, 1024 × 1024 PNG, 365 KB, transparent background; slightly soft, upscaled (Lanczos) from `priv/static/images/jurisdictional-logo.png` (200 × 200). Swap in an export from the original vector if one turns up, before the first portal save.
-- Skill: `skills/gather/SKILL.md` is 417 lines (limit 500) and keeps its three stops (after Step 2, each Step 4 review, the next target); `name` matches its folder; `description` says what and when. Spec: https://agentskills.io/specification
+- Icon: the PNG in `.claude-plugin/`, 1024 × 1024, 365 KB, transparent background; slightly soft, upscaled (Lanczos) from `priv/static/images/jurisdictional-logo.png` (200 × 200). Swap in an export from the original vector if one turns up, before the first portal save.
+- Skill: `skills/gather/SKILL.md` is under 500 lines (429 on 2026-11-20) and keeps its three stops (after Step 2, each Step 4 review, the next target); `name` matches its folder; `description` says what and when. Spec: https://agentskills.io/specification
 - Leases (jurisdictional 6e4c6e93, skill 0.6.2): `claim_work` hands out gather targets with an 8-hour lease and `release_work` hands them back; SKILL.md's "Choosing a next target" and `/gather next` claim with it, and Step 6 releases what the session won't finish. https://github.com/civicstudio/jurisdictional/issues/157 is closed.
 - Feedback (jurisdictional cdf0ab52): `send_feedback` for signed-in users; the skill offers it at the next-target stop, only with text the user approved.
 - Terms (jurisdictional 7dbf572d, https://github.com/civicstudio/jurisdictional/pull/158): https://jurisdictional.org/terms answers 200, linked from the footer and `/skill`.
 - D7, request-log retention: settled at 90 days. `/privacy` says "Each request is kept for 90 days, then deleted", `/terms` says the same, and the server's daily rollup deletes raw rows after 90 days, keeping daily totals.
 - Server, checked against production on 2026-11-17:
-  - Streamable HTTP at `https://jurisdictional.org/mcp` (`/api/mcp/message` stays as an alias); `initialize` answers protocol `2025-06-18`, `serverInfo.version` `1.0.0`; 21 tools from `tools/list` with no token.
+  - Streamable HTTP at `https://jurisdictional.org/mcp` (`/api/mcp/message` stays as an alias); `initialize` answers protocol `2025-06-18`, `serverInfo.version` `1.0.0`; 21 tools from `tools/list` without signing in.
   - OAuth: protected resource metadata at `/.well-known/oauth-protected-resource/mcp` (`resource` equals the MCP URL), authorization server metadata at `/.well-known/oauth-authorization-server` with `code_challenge_methods_supported: ["S256"]`, `registration_endpoint` (DCR) and `token_endpoint_auth_methods_supported: ["none"]`. Requirements: https://claude.com/docs/connectors/building/authentication
-  - Lazy auth: `tools/call` on `propose_change` with no token answers HTTP 401 with `WWW-Authenticate: Bearer resource_metadata="…/oauth-protected-resource/mcp"`. Doc: https://claude.com/docs/connectors/building/lazy-authentication
+  - Lazy auth: `tools/call` on `propose_change` without signing in answers HTTP 401 with `WWW-Authenticate: Bearer resource_metadata="…/oauth-protected-resource/mcp"`. Doc: https://claude.com/docs/connectors/building/lazy-authentication
 - Connector review criteria (https://claude.com/docs/connectors/building/review-criteria), checked 2026-11-17:
   - Every tool carries `title`, top-level and in its annotations (jurisdictional 2a97b93).
   - Anonymous: all 21 tools `readOnlyHint: true`.
@@ -77,7 +77,7 @@ Only Ryan can do, in order:
 
 ### Plugin bundle (Ryan)
 
-1. **Icon.** Approve `.claude-plugin/icon.png` or replace it: a square PNG or JPEG, 512 to 2048 px, under 2 MB. SVG and WebP are not accepted. The file becomes the listing icon only once, on the first save or submission in the portal.
+1. **Icon.** Approve the plugin icon in `.claude-plugin/` or replace it: a square PNG or JPEG, 512 to 2048 px, under 2 MB. SVG and WebP are not accepted. The file becomes the listing icon only once, on the first save or submission in the portal.
 2. **Submit** at https://claude.ai/directory/manage → Submit new → Plugin bundle. Needs a paid claude.ai plan and a connected GitHub account with push access to `jurisdictional/jurisdictional-skill` (public). Steps: Source, Validate, Listing details, Data handling, Compliance (a contact email plus four acknowledgements), Review and submit. Limits: 10 submissions per organization per 24 hours, one per repo and folder. Docs: https://claude.com/docs/directory/publish and https://claude.com/docs/plugins/submit
 3. **Review timeline:** not published (**unverified**). New listings are reviewed by a person; every version gets automated validation and a security scan.
 4. Raise `version` in `plugin.json` with every change; the directory follows commits, and a stale version keeps users on old copies.

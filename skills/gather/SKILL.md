@@ -30,7 +30,8 @@ The user has local knowledge you don't — defer to them on what's accurate.
 Every fact submitted must trace back to a page someone can open and check.
 Data without a source is opinion. Data with a source is evidence.
 
-- **Values come from the government's own page**, read with `gather`, from an archived capture (`mcc_read`, or `gather`'s archived copy, cited with its capture date), in the user's browser, or pasted by the user — **or from the user's own knowledge.** Nothing else.
+- **Values come from the government's own page**, read with `gather`, from an archived capture (`mcc_read`, or `gather`'s archived copy, cited with its capture date), in the user's browser, or pasted by the user — **or from the user's own knowledge.**
+  When the government's own site doesn't publish a value, its county's directory or the state municipal league's directory may; cite that page, and prefer the government's own page whenever it has the value.
 - **`WebSearch` finds URLs; it is never a source of values.** Search snippets are not the page: a snippet can be stale, truncated or from another city. Find the URL, then `gather` it and read the value there.
 - **Never use training data as a source.** Departments get reorganized, officials leave, numbers change. Training knowledge may guide research ("this city probably has a Parks department — let me look"), but the submitted value must come from the page you find. If you think you know something but can't find it, say so: "I think the police number is X, but I can't find it on their site — can you check?"
 - **An empty field is better than an unsourced one.**
@@ -198,6 +199,7 @@ Use `WebSearch` (`site:cityofvacaville.gov departments`) only to find which URL 
    Attach the paste as `capture` (`via: "paste"`, the pasted `text`) on the same writes.
 
 Check a browser capture or a paste for a block page too, the same way.
+School district sites on Finalsite, and sites behind Cloudflare, often block `gather` but open in the browser: capture them there, and record a coverage gap only when the page can't be read in the browser either.
 
 **Within the rung, work top-down:** agencies before their services, a body before its seats, seats before the people in them, then meetings.
 **Services run alongside agencies** — as you list each agency, ask what a resident can do with it. See [references/services.md](references/services.md).
@@ -222,19 +224,21 @@ At each layer look for names, types, URLs, descriptions, contact info and relati
   A new account is suggested and reviewed before it shows.
 - **Parks, libraries, schools and community centers:** at each layer, look for the parks agency, its reservation and registration services, and the places themselves.
   `search_places` first, then `create_entity` (`entity_type: "place"`, `place_type`, `name`, `jurisdiction_id`, `managing_agency_id` when the page names the agency, `source_url`); see [tools.md](references/tools.md).
+  A public school is a place (`place_type: "school"`) whose `jurisdiction_id` is its school district, taken from the district's own schools page; it becomes an agency only when its own page lists staff, a phone number and services of its own.
 - **Officials:** read the roster page; note start dates and term ends only when published.
+  A school board is a body on its school district (`jurisdiction_id` the district, no `agency_id`), with one seat per trustee; seat the trustees as for any body.
 - **Photos, every time:** whenever a page you fetched shows officials (a roster, a bio, a board page), take each matched holder's headshot from the same HTML: the `<img>` whose alt, caption or file name carries the person's name, or the one nearest their name, never from the header, nav, footer or a slider.
   Take the largest size the page offers (`srcset`), keep the alt and caption verbatim, and note any photographer credit next to the image.
   Do this even when the roster itself is unchanged: `get_body_details` shows `image: null` for holders without a photo.
   City logos and flags on a page you fetched are noted the same way.
   All of them are submitted in Step 6.
 - **Meetings:** the body's meetings page or agenda platform (Granicus, Legistar, eScribe, CivicPlus Agenda Center) gives dates and agenda, minutes and video links.
-  When that page is on Legistar, Granicus, eScribe, CivicClerk or a CivicPlus AgendaCenter, record the body's `meeting_url` and register the page as a feed with `register_meeting_source` (most specific URL, `dry_run` first), so its meetings arrive on their own; don't enter that body's meetings by hand.
+  When that page is on a feed vendor (Legistar, Granicus, eScribe, CivicClerk, CivicPlus AgendaCenter, PrimeGov, OnBase Agenda Online, Chicago's eLMS; see [tools.md](references/tools.md)), record the body's `meeting_url` and register the page as a feed with `register_meeting_source` (most specific URL, `dry_run` first), so its meetings arrive on their own; don't enter that body's meetings by hand.
   Hand-enter meetings with `create_entity` only for other platforms and one-off meetings; without `register_meeting_source` in the tool list, propose the `meeting_url` and stop there. See [tools.md](references/tools.md).
-- **Website pages, every layer:** record each page kind the site has: the meetings calendar, agendas, minutes, adopted budget, ACFR or audit (`financial_report`), municipal code, open data portal, `/data.json` a developer API (`api`: its documentation or base URL) the GIS portal or map viewer (`gis`: an ArcGIS Hub, a GIS data page or an interactive map), the purchasing page for open bids, RFPs and awards (`procurement`, often a vendor portal such as Bonfire, OpenGov Procurement, BidNet or DemandStar) and the jobs page (`jobs`, its own HR page or GovernmentJobs/NEOGOV); for federal agencies also about, `/open`, FOIA, privacy, accessibility, vulnerability disclosure, No FEAR Act and inspector general.
+- **Website pages, every layer:** record each page kind the site has: the meetings calendar, agendas, minutes, adopted budget, ACFR or audit (`financial_report`), adopted plans (`plan`: the general or comprehensive plan, strategic plan, capital improvement plan), municipal code, open data portal, `/data.json`, a developer API (`api`: its documentation or base URL), the GIS portal or map viewer (`gis`: an ArcGIS Hub, a GIS data page or an interactive map), the purchasing page for open bids, RFPs and awards (`procurement`, often a vendor portal such as Bonfire, OpenGov Procurement, BidNet or DemandStar), the jobs page (`jobs`, its own HR page or GovernmentJobs/NEOGOV), the public and legal notices page (`notices`, on its own host or its newspaper-of-record notice portal) and the emergency alerts signup (`alerts`, even on a vendor or regional host such as CodeRED, Everbridge, Nixle or a 911 authority; a signup, never a call path, and a news email list doesn't count); for federal agencies also about, `/open`, FOIA, privacy, accessibility, vulnerability disclosure, No FEAR Act and inspector general.
   Open each page and confirm it is that page before recording it, then write one `create_entity` (`entity_type: "page"`) per kind; see [tools.md](references/tools.md).
   The kind list grows, so read an unknown-kind error for the current list rather than guessing.
-  When a government's site has no page of a tracked kind (budget, financial_report, meetings, agendas, open_data, api, gis, procurement, jobs), say so in the summary instead of skipping it; an admin records `record_field_absence` with `field_name: "<kind>_page"` (`api_page`), so the target leaves the queue for 6 months.
+  When a government's site has no page of a tracked kind (the `<kind>_page` fields under `record_field_absence` in [tools.md](references/tools.md)), say so in the summary instead of skipping it; an admin records `record_field_absence` with `field_name: "<kind>_page"` (`api_page`), so the target leaves the queue for 6 months.
   A body keeps its own `meeting_url`; a jurisdiction-wide meetings portal is a `meetings` page on the jurisdiction.
 - **Existing values:** if a page confirms a value already in the dataset, that's worth submitting too — it corroborates it.
 
@@ -297,8 +301,8 @@ The same goes for `search_bodies`, `search_services`, `search_positions` (by `bo
 | Seating a person | `create_entity(entity_type: "person", position_id, source_url, start_date?, term_ends_on?)` |
 | A whole roster changed (admin) | `reconcile_roster` — dry run first, show the plan, then apply |
 | Someone left a seat (admin) | `end_tenure` with the page that shows it; otherwise note it for an admin |
-| A body's meeting page on Legistar, Granicus, eScribe, CivicClerk or AgendaCenter | `register_meeting_source(body_id, url, dry_run: true)`, then for real; expect `action: "created"` or `"exists"` |
-| A meeting or agenda item on another platform, or a one-off | `create_entity(entity_type: "meeting", body_id, start_time, agenda_url, minutes_url, video_url)` |
+| A body's meeting page on a feed vendor (Legistar, Granicus, eScribe, CivicClerk, AgendaCenter, PrimeGov, OnBase, Chicago's eLMS) | `register_meeting_source(body_id, url, dry_run: true)`, then for real; expect `action: "created"` or `"exists"` |
+| A meeting or agenda item on another platform, or a one-off | `create_entity(entity_type: "meeting", body_id, start_time, timezone, status, external_id, agenda_url, minutes_url, video_url)` (`timezone` and `external_id` every time; see [tools.md](references/tools.md)); the venue goes in `location_name`, `location_address` and `location_room`, not `description` |
 | A website page by what it is for (meetings, budget, FOIA…) | `create_entity(entity_type: "page", kind, url, source_url, jurisdiction_id, agency_id? or body_id?)`, once per kind |
 | An official's photo, or a seal, logo or flag | `submit_image` (private review queue) |
 
@@ -365,6 +369,7 @@ If you already submitted the values, pass `data: {}` so they aren't proposed twi
 - **Zero services with agencies is a red flag, not a finished session.** Say so: "18 agencies but 0 services — I haven't captured what residents can actually do yet. Want me to work the 'How Do I' page and quick links?" Don't move on with a silent zero.
 - **Report what you did NOT find, and why** — no published roster, no term dates, a page that blocked the fetcher. Gaps named are gaps someone else can fill; gaps hidden look like completeness. An admin can record a blocked site with `record_coverage_gap`.
 - **Duplicates and departures** you couldn't fix (non-admin): list them for an admin.
+- **A mistake you just created** (an agency on the wrong jurisdiction from a transposed id): say so at once. An admin deletes their own with `delete_entity`; anyone else reports its type and id for an admin rather than leaving it.
 
 **Session summary:**
 
@@ -396,7 +401,7 @@ In this order:
 
 1. **Another government at this address** below `served` or below Gold, from Step 2's table. The user lives there, so the gap is theirs.
 2. **Claimed work.** Anywhere else, pick targets with `claim_work` rather than from a list, so no one else is handed the same gap: `claim_work(kind: "no_agencies", state: "CA", n: 3)` gives the largest places and counties with no agencies yet.
-   The other kinds are `jurisdiction_website_missing`, `agency_phone_missing` and `statewide_seat_unlinked`, and the county kinds, website first: `county_website_missing`, `county_body_missing`, `county_seats_unheld`, `county_page_missing:<kind>` and `county_social_missing` (see [tools.md](references/tools.md)).
+   The other kinds are `jurisdiction_website_missing`, `agency_phone_missing`, `agency_description_missing`, `services_missing` and `statewide_seat_unlinked`, and the county kinds, website first: `county_website_missing`, `county_body_missing`, `county_seats_unheld`, `county_page_missing:<kind>` and `county_social_missing` (see [tools.md](references/tools.md)).
    Each target is leased to the user for 8 hours and carries a `lease_id` and a `hint` naming the write that fills it (`propose_change phone`); that write ends the lease on its own.
    Once the user picks one, `release_work` the leases on the others straight away.
    `claim_work` needs sign-in; if the user isn't signed in, offer it, as in the preflight.
@@ -417,7 +422,7 @@ Offer two or three with `AskUserQuestion`, each with what it's missing ("<name>,
 - **Coverage is the scoreboard.** Name the rung and tier before and after, and what would move it up next.
 - **Services are the payoff layer.** Agencies and officials are scaffolding; a jurisdiction with 18 agencies and 0 services is an org chart, not coverage.
 - **New entities go live for admins and trusted contributors; for others they're suggested and reviewed. Edits get reviewed.** Take the most care with `create_entity` and `import_jurisdiction`, and report a suggested record as suggested, not live.
-- **Source hierarchy.** The government's own site (via `gather`) first; then other official sites (a state municipal league, the county); then news; then the user's local knowledge, attributed as "user-provided". Search snippets and training data are never sources.
+- **Source hierarchy.** The government's own page (its `.gov` or official municipal site, via `gather`, an archived capture, the user's browser or a paste) first; then a county or state municipal league directory; then the user's local knowledge, attributed as "user-provided". News, search snippets and training data are never sources.
 - **Respect the user's knowledge.** If they say "that department was reorganized last year", believe them, and ask where it's published.
 - **Post as you go.** A contribution is written when its page has been read. Do not batch the jurisdiction for one submission at the end.
 - **Be incremental.** Five verified agencies are worth more than thirty unverified ones.

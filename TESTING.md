@@ -16,15 +16,16 @@ claude plugin validate --strict .claude-plugin/marketplace.json
 Both pass with no warnings.
 The repo's guidance for Claude Code lives in `.claude/CLAUDE.md`, not at the root, because the validator warns about a root `CLAUDE.md` in a plugin.
 
-Check the connection in a clean HOME, so your own MCP config can't mask the plugin's:
+Check the connection with a clean home directory, so your own MCP config can't mask the plugin's.
+From this repo, in a real terminal (not `!`, which can't complete the browser sign-in), make an empty directory such as `/tmp/jurisdictional-home`, then run each command with `HOME` set to it:
 
 ```
-H=$(mktemp -d)
-HOME=$H claude --plugin-dir "$PWD" mcp list          # expect: plugin:jurisdictional:jurisdictional ... ✔ Connected
-HOME=$H claude --plugin-dir "$PWD" mcp login plugin:jurisdictional:jurisdictional   # browser sign-in; needs a real terminal, not `!`
-HOME=$H claude --plugin-dir "$PWD" mcp list          # expect: ✔ Connected, now signed in
-rm -rf $H
+claude --plugin-dir . mcp list          # expect: plugin:jurisdictional:jurisdictional ... ✔ Connected
+claude --plugin-dir . mcp login plugin:jurisdictional:jurisdictional   # browser sign-in
+claude --plugin-dir . mcp list          # expect: ✔ Connected, now signed in
 ```
+
+Delete the directory afterwards.
 
 For a session, run `claude --plugin-dir .` from this repo.
 
@@ -32,7 +33,7 @@ For a session, run `claude --plugin-dir .` from this repo.
 
 ### T1 — A newcomer can explore without an account
 
-*As a first-time user with no token, I run `/gather 300 Hemlock St, Vacaville, CA` and see my governments.*
+*As a first-time user who is not signed in, I run `/gather 300 Hemlock St, Vacaville, CA` and see my governments.*
 
 - The first answer is Step 2's table; "not signed in" is one line under it, and nothing blocks.
 - The juricode comes from `set_location`; no layer is invented.
@@ -129,6 +130,30 @@ For a session, run `claude --plugin-dir .` from this repo.
 - On `gather timed out`, `gather empty render`, `Domain not allowed`, or an "Access Denied" page returned as content, it doesn't retry or extract from it: with a browser connected it reads the page there (cited "captured in the user's browser"); otherwise it asks for a paste.
 - Before creating a person it searches the full name, then the last name alone.
 
+### T13 — A school district's schools and board go in the right way
+
+*As a parent in Vacaville Unified, I see my district's schools and its trustees.*
+
+- `/gather` on Vacaville Unified adds its schools as places (`place_type: "school"`) in jurisdiction 77297, each citing the district's own schools page, and `search_places(place_type: "school", jurisdiction_ids: [77297])` finds them.
+- A school becomes an agency only when its own page lists staff, a phone number and services of its own.
+- The Board of Education is a body on the district, with one seat per trustee, and its trustees are seated from the district's roster page.
+- A district site that blocks `gather` (Finalsite, Cloudflare) is read in the browser and the writes carry `capture`; a coverage gap is recorded only when the browser can't read it either.
+
+### T14 — Services are claimed, tagged and settled
+
+*As a contributor working the services queue, I leave each city with services or a recorded reason it has none.*
+
+- `claim_work(kind: "services_missing")` leases a city or county with agencies and no services.
+- Each service is created on the agency that offers it, and a core resident service carries its name as a tag (`tags: ["inmate_lookup"]`).
+- On a county, `get_coverage`'s `core_services.unchecked` is worked down: tagged services, or, for an admin, a `<service>_service` absence after a full look; a site with no services at all gets one `services` absence.
+
+### T15 — A mistake is owned straight away
+
+*As a contributor who just created an agency on the wrong jurisdiction (a transposed id), I see it fixed or reported in the same session.*
+
+- The skill says so as soon as it notices.
+- An admin deletes their own mistake with `delete_entity`; anyone else gets its type and id in the summary for an admin.
+
 ## Scoring
 
 | # | Pass/Fail | Notes |
@@ -145,3 +170,6 @@ For a session, run `claude --plugin-dir .` from this repo.
 | T10 | | |
 | T11 | | |
 | T12 | | |
+| T13 | | |
+| T14 | | |
+| T15 | | |

@@ -53,6 +53,8 @@ A service has two fields from fixed lists; a value outside either is refused on 
 - `agency_id`: the agency that runs it. Required.
 - `cost`: a plain number in dollars (`"50"`, `"12.50"`). Put tiered or conditional fees in `description`.
 - `eligibility`: who may use it, as published.
+- `tags`: a core resident service carries its name as a tag, so `get_coverage` counts it on file: property_tax_payment, recorded_documents, marriage_license, vital_records, voter_registration, court_fines, building_permits, animal_services, public_health, inmate_lookup, road_conditions, park_reservations, parking_tickets.
+  An online inmate roster is `tags: ["inmate_lookup"]`.
 
 ## `source_url` is the page you read; `online_url` is the link a resident clicks
 
@@ -81,3 +83,6 @@ After creating services, call `get_service_details` and check `online_url` speci
 Check the service count.
 If you created agencies but zero services, you have almost certainly missed some — cities do not have departments that do nothing.
 Go back to the "How Do I" page and the quick links before reporting the session complete.
+
+On a county, also check `get_coverage`'s `core_services.unchecked`: each core service is either on file (a tagged service), or, after a full look at the site, an absence an admin records with `record_field_absence(field_name: "<service>_service")`.
+A site that lists no service at all is one `services` absence; for a non-admin, both go in the summary.
