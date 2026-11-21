@@ -110,15 +110,17 @@ Terms of use: [jurisdictional.org/terms](https://jurisdictional.org/terms).
 
 | Contribution | How it lands |
 |------|-------------|
-| Departments a city is missing, or a whole city's agencies, bodies and services at once | New entities, live right away |
-| Services — what residents can pay, apply for, report or reserve, with the link to do it | New entities, live right away |
-| Councils, boards and their seats, and who holds each seat | New entities and tenures, live right away |
-| Meetings, with agenda, minutes and video links | New entities, live right away |
+| Departments a city is missing, or a whole city's agencies, bodies and services at once | New entities, reviewed before they show (live right away for trusted contributors) |
+| Services — what residents can pay, apply for, report or reserve, with the link to do it | New entities, reviewed before they show (live right away for trusted contributors) |
+| Councils, boards and their seats, and who holds each seat | New entities and tenures, reviewed before they show (live right away for trusted contributors) |
+| Meetings, with agenda, minutes and video links | New entities, reviewed before they show (live right away for trusted contributors) |
 | Phone, email, website and other fixes to existing records | Proposed changes, reviewed by a person |
 | A second source confirming a value already there | Corroboration, recorded right away |
 | Official headshots, city logos and flags | Image candidates, reviewed before they're shown |
 
-Every value needs a source: a page fetched from the government's site, or your own local knowledge, attributed as yours.
+A new record from anyone but a trusted contributor or an admin is suggested: it is hidden until a person reviews it, and the session reports it as pending review, never as live.
+
+Every value needs a source: a page from the government's own site (or, when it doesn't publish the value, its county's or state municipal league's directory), or your own local knowledge, attributed as yours.
 Search snippets and the model's memory are never sources.
 
 ## Data format
